@@ -2,25 +2,27 @@ from django.db import models
 import random
 import string
 
+from django.db import models
+
 class Movie(models.Model):
-    name = models.CharField(max_length=100)  # نص
-    show_times = models.JSONField(default=list)  # مصفوفة لتخزين توقيتات العروض
-    seats = models.IntegerField(default=100)  # عدد صحيح
-    available_seats = models.IntegerField(default=seats)
-    reservations = models.IntegerField(default=0, blank=True)  # عدد صحيح
-    photo = models.CharField(max_length=255, default="https://st2.depositphotos.com/1105977/9877/i/450/depositphotos_98775856-stock-photo-retro-film-production-accessories-still.jpg")  # نص
-    vertical_photo = models.CharField(max_length=255, blank=True)  # نص
-    ticket_price = models.DecimalField(max_digits=5, decimal_places=2)  # عدد عشري
-    reservedSeats = models.JSONField(default=list, blank=True)  # مصفوفة
-    description = models.TextField(blank=True)  # نص
-    short_description = models.TextField(max_length=150,blank=True)  # نص قصير
-    sponsor_video = models.URLField(blank=True)  # نص
-    actors = models.JSONField(default=list, blank=True)  # مصفوفة
-    release_date = models.DateField(blank=True, null=True)  # نص
-    duration = models.CharField(max_length=50, blank=True)  # نص
-    rating = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)  # عدد عشري
-    imdb_rating = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)  # عدد عشري
-    tags = models.JSONField(default=list, blank=True)  # مصفوفة
+    name = models.CharField(max_length=100)
+    show_times = models.JSONField(default=dict)
+    seats = models.IntegerField(default=100)
+    available_seats = models.IntegerField(default=100)
+    reservations = models.IntegerField(default=0, blank=True)
+    photo = models.CharField(max_length=255, default="https://st2.depositphotos.com/1105977/9877/i/450/depositphotos_98775856-stock-photo-retro-film-production-accessories-still.jpg")
+    vertical_photo = models.CharField(max_length=255, blank=True)
+    ticket_price = models.DecimalField(max_digits=5, decimal_places=2)
+    reservedSeats = models.JSONField(default=list, blank=True)
+    description = models.TextField(blank=True)
+    short_description = models.TextField(max_length=150, blank=True)
+    sponsor_video = models.URLField(blank=True)
+    actors = models.JSONField(default=list, blank=True)
+    release_date = models.DateField(blank=True, null=True)
+    duration = models.CharField(max_length=50, blank=True)
+    rating = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
+    imdb_rating = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
+    tags = models.JSONField(default=list, blank=True)
 
     def __str__(self):
         return self.name

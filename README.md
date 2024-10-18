@@ -34,5 +34,5 @@ This API is designed to work alongside two other applications:
 1. Clone the repository:
 
    ```bash
-   git clone <repository_url>
+   git clone <https://github.com/hmoodaps/events_api.git>
    cd cinema_event_management_api
