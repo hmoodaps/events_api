@@ -91,16 +91,17 @@ WSGI_APPLICATION = 'events_api.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': '***********************',
+        'ENGINE': 'django.db.backends.mysql',
         'NAME': 'defaultdb',  # اسم قاعدة البيانات
         'USER': 'avnadmin',    # اسم المستخدم
-        'PASSWORD': '************',  # كلمة المرور
-        'HOST': '********************',  # المضيف
+        'PASSWORD': 'AVNS_J1NUdArjWAPfV3mdRAh',  # كلمة المرور
+        'HOST': 'mysql-3ceba095-ahmadnahal7-b12d.k.aivencloud.com',  # المضيف
         'PORT': '18775',       # المنفذ
         'OPTIONS': {
         },
     }
 }
+
 
 
 
@@ -149,5 +150,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles_build', 'static')
 
-MEDIA_URL = '/media/'  # تم تصحيح الخطأ هنا (كانت MEDIA_URLS)
+MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

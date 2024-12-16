@@ -64,8 +64,9 @@ class GuestViewSet(viewsets.ModelViewSet):
     queryset = Guest.objects.all()
     serializer_class = GuestSerializer
     filter_backends = [filters.SearchFilter]
-    search_fields = ['full_name']
+    search_fields = ['id']  # البحث حسب الحقول المتوفرة فقط
     authentication_classes = [TokenAuthentication]
+
 
 class MovieViewSet(viewsets.ModelViewSet):
     queryset = Movie.objects.all()
@@ -90,7 +91,7 @@ class ReservationViewSet(viewsets.ModelViewSet):
     authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [filters.SearchFilter]
-    search_fields = ['reservations_code', 'guest__full_name', 'movie__actors', 'movie__tags']
+    search_fields = ['reservations_code','movie__name', 'movie__actors', 'movie__tags']
 
     @action(detail=False, methods=['get'], url_path='search-by-seat')
     def search_by_seat(self, request):
@@ -127,11 +128,13 @@ class ReservationViewSet(viewsets.ModelViewSet):
             "reservation_code": reservation.reservations_code,
             "guest": {
                 "id": reservation.guest.id,
-                "full_name": reservation.guest.full_name,
-                "age": reservation.guest.age,
-                "reservations": reservation.guest.reservations,
+                "age": reservation.guest.id,
                 "seats": reservation.guest.seats,
-                "total_payment": reservation.guest.total_payment,
+                "seat_price": reservation.guest.seat_price,
+                "total_price": reservation.guest.total_price,
+                "show_date": reservation.guest.show_date,
+                "show_time": reservation.guest.show_time,
+                "movie_id": reservation.guest.movie_id,
             },
             "movie": {
                 "id": reservation.movie.id,

@@ -26,12 +26,11 @@ class MovieSerializer(serializers.ModelSerializer):
             'tags',
         ]
 
-class GuestSerializer(serializers.ModelSerializer):
-    total_payment = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
 
+class GuestSerializer(serializers.ModelSerializer):
     class Meta:
         model = Guest
-        fields = ['id', 'full_name', 'age', 'reservations', 'seats', 'total_payment']
+        fields = ['id','age' ,'seats', 'seat_price', 'total_price', 'show_date', 'show_time', 'movie_id']
 
 class ReservationSerializer(serializers.ModelSerializer):
     movie = MovieSerializer()

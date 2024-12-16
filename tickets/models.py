@@ -27,19 +27,19 @@ class Movie(models.Model):
     def __str__(self):
         return self.name
 
-class Guest(models.Model):
-    full_name = models.CharField(max_length=100)  # نص
-    age = models.IntegerField()  # عدد صحيح
-    seats = models.JSONField(default=list)  # مصفوفة
-    reservations = models.IntegerField(default=0)
-    movie = models.ForeignKey('Movie', on_delete=models.SET_NULL, null=True, blank=True)  # ربط الضيف بالفيلم
 
-    @property
-    def total_payment(self):
-        try:
-            return self.reservations * self.movie.ticket_price  # استخدم self.movie بدلاً من movie_id
-        except Movie.DoesNotExist:
-            return 0
+class Guest(models.Model):
+    id = models.CharField(max_length=100, primary_key=True)  # المفتاح الأساسي
+    seats = models.JSONField(default=list)  # مصفوفة
+    seat_price = models.FloatField(default=0.0)  # سعر المقعد
+    total_price = models.FloatField(default=0.0)  # السعر الكلي
+    show_date = models.CharField(max_length=20, default="2024-01-01")  # تاريخ العرض
+    show_time = models.CharField(max_length=20, default="12:00 PM")  # وقت العرض
+    movie_id = models.IntegerField()  # معرف الفيلم
+    age = models.IntegerField()
+
+
+
 
 class Reservation(models.Model):
     movie = models.ForeignKey('Movie', related_name='reservations_set', on_delete=models.CASCADE)
