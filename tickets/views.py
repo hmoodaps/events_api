@@ -64,7 +64,7 @@ class GuestViewSet(viewsets.ModelViewSet):
     queryset = Guest.objects.all()
     serializer_class = GuestSerializer
     filter_backends = [filters.SearchFilter]
-    search_fields = ['id']  # البحث حسب الحقول المتوفرة فقط
+    search_fields = ['id']
     authentication_classes = [TokenAuthentication]
 
 
