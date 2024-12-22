@@ -6,23 +6,26 @@ from django.db import models
 
 class Movie(models.Model):
     name = models.CharField(max_length=100)
-    show_times = models.JSONField(default=dict)
-    seats = models.IntegerField(default=100)
-    available_seats = models.IntegerField(default=100)
-    reservations = models.IntegerField(default=0, blank=True)
-    photo = models.CharField(max_length=255, default="https://st2.depositphotos.com/1105977/9877/i/450/depositphotos_98775856-stock-photo-retro-film-production-accessories-still.jpg")
-    vertical_photo = models.CharField(max_length=255, blank=True)
-    ticket_price = models.DecimalField(max_digits=5, decimal_places=2)
-    reservedSeats = models.JSONField(default=list, blank=True)
-    description = models.TextField(blank=True)
-    short_description = models.TextField(max_length=150, blank=True)
-    sponsor_video = models.URLField(blank=True)
-    actors = models.JSONField(default=list, blank=True)
-    release_date = models.DateField(blank=True, null=True)
-    duration = models.CharField(max_length=50, blank=True)
-    rating = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
-    imdb_rating = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
-    tags = models.JSONField(default=list, blank=True)
+    show_times = models.JSONField(default=dict)  # JSON متوافقة مع ShowTimesResponse
+    seats = models.IntegerField(default=100)  # int?
+    available_seats = models.IntegerField(default=100)  # int?
+    reservations = models.IntegerField(default=0, blank=True)  # int?
+    photo = models.CharField(
+        max_length=255,
+        default="https://st2.depositphotos.com/1105977/9877/i/450/depositphotos_98775856-stock-photo-retro-film-production-accessories-still.jpg"
+    )  # String?
+    vertical_photo = models.CharField(max_length=255, blank=True)  # String?
+    ticket_price = models.FloatField()  # double?
+    reservedSeats = models.JSONField(default=list, blank=True)  # List<dynamic>?
+    description = models.TextField(blank=True)  # String?
+    short_description = models.TextField(max_length=150, blank=True)  # String?
+    sponsor_video = models.URLField(blank=True)  # String?
+    actors = models.JSONField(default=list, blank=True)  # List<dynamic>?
+    release_date = models.DateField(blank=True, null=True)  # String? (بتنسيق التاريخ مثل yyyy-MM-dd)
+    duration = models.CharField(max_length=50, blank=True)  # String?
+    rating = models.FloatField(blank=True, null=True)  # double?
+    imdb_rating = models.FloatField(blank=True, null=True)  # double?
+    tags = models.JSONField(default=list, blank=True)  # List<dynamic>?
 
     def __str__(self):
         return self.name

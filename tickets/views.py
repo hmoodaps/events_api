@@ -73,8 +73,7 @@ class MovieViewSet(viewsets.ModelViewSet):
     serializer_class = MovieSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = [
-        'name', 'description', 'short_description', 'vertical_photo',
-        'sponsor_video', 'release_date', 'duration',
+        'name', 'release_date', 'duration',
         'rating', 'imdb_rating', 'tags', 'actors',
     ]
     authentication_classes = [TokenAuthentication]
