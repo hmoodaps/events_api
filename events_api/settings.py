@@ -92,11 +92,11 @@ WSGI_APPLICATION = 'events_api.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'defaultdb',  # اسم قاعدة البيانات
-        'USER': 'avnadmin',    # اسم المستخدم
-        'PASSWORD': '****************',  # كلمة المرور
-        'HOST': '**************',  # المضيف
-        'PORT': '18775',       # المنفذ
+        'NAME': 'defaultdb',
+        'USER': 'avnadmin',
+        'PASSWORD': 'AVNS_eSzuRXbHIU5hspDOLXA',
+        'HOST': 'mysql-2aa0bcbe-ahmadnahal7-b12d.f.aivencloud.com',
+        'PORT': '18775',
         'OPTIONS': {
         },
     }
