@@ -2,7 +2,7 @@ from rest_framework import status, viewsets, filters, permissions
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.admin import User
 from rest_framework.authtoken.models import Token
-from rest_framework.decorators import action
+from rest_framework.decorators import action, authentication_classes, permission_classes
 from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -12,7 +12,10 @@ from .models import Movie
 from .serializer import GuestSerializer, MovieSerializer, ReservationSerializer
 
 
+
 @api_view(['POST'])
+@authentication_classes([TokenAuthentication])  # إضافة المصادقة بواسطة التوكن
+@permission_classes([IsAuthenticated])  # التأكد من أن المستخدم مسجل دخوله
 def create_superuser(request):
     username = request.data.get('username')
     password = request.data.get('password')
