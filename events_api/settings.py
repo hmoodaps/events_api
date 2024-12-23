@@ -89,16 +89,15 @@ WSGI_APPLICATION = 'events_api.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'defaultdb',
-        'USER': 'avnadmin',
-        'PASSWORD': 'AVNS_eSzuRXbHIU5hspDOLXA',
-        'HOST': 'mysql-2aa0bcbe-ahmadnahal7-b12d.f.aivencloud.com',
-        'PORT': '18775',
-        'OPTIONS': {
-        },
+        'NAME': os.getenv('DB_NAME', 'defaultdb'),
+        'USER': os.getenv('DB_USER', 'avnadmin'),
+        'PASSWORD': os.getenv('DB_PASSWORD', '***************'),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', '3306'),
     }
 }
 
