@@ -40,7 +40,7 @@ def get_movies(request):
     for movie in movies:
         movie_data = {
             'id': movie.id,
-            'added_Date':movie.added_date,
+            'added_Date':movie.added_Date,
             'name': movie.name,
             'show_times': movie.show_times,
             'seats': movie.seats,
