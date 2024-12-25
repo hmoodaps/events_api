@@ -40,6 +40,7 @@ def get_movies(request):
     for movie in movies:
         movie_data = {
             'id': movie.id,
+            'added_Date':movie.added_date,
             'name': movie.name,
             'show_times': movie.show_times,
             'seats': movie.seats,
@@ -77,7 +78,7 @@ class MovieViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter]
     search_fields = [
         'name', 'release_date', 'duration',
-        'rating', 'imdb_rating', 'tags', 'actors',
+        'rating', 'imdb_rating', 'tags', 'actors','show_times',
     ]
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
@@ -142,6 +143,7 @@ class ReservationViewSet(viewsets.ModelViewSet):
                 "id": reservation.movie.id,
                 "name": reservation.movie.name,
                 "seats": reservation.movie.seats,
+                'added_Date': reservation.movie.added_date,
                 "available_seats": reservation.movie.available_seats,
                 "reservations": reservation.movie.reservations,
                 "photo": reservation.movie.photo,

@@ -11,6 +11,7 @@ class MovieSerializer(serializers.ModelSerializer):
             'id',
             'name',
             'show_times',  # استخدم show_times بدلاً من date و time
+            'added_Date',
             'seats',
             'available_seats',
             'reservations',
