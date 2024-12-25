@@ -24,7 +24,6 @@ class Movie(models.Model):
     release_date = models.DateField(blank=True, null=True)  # String? (بتنسيق التاريخ مثل yyyy-MM-dd)
     added_Date = models.DateField(blank=True, null=True)  # String? (بتنسيق التاريخ مثل yyyy-MM-dd)
     duration = models.CharField(max_length=50, blank=True)  # String?
-    rating = models.FloatField(blank=True, null=True)  # double?
     imdb_rating = models.FloatField(blank=True, null=True)  # double?
     tags = models.JSONField(default=list, blank=True)  # List<dynamic>?
 

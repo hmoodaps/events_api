@@ -2,7 +2,6 @@ from rest_framework import serializers
 from .models import Movie, Guest, Reservation
 
 class MovieSerializer(serializers.ModelSerializer):
-    rating = serializers.FloatField()
     imdb_rating = serializers.FloatField()
     ticket_price = serializers.FloatField()
     class Meta:
@@ -25,7 +24,6 @@ class MovieSerializer(serializers.ModelSerializer):
             'actors',
             'release_date',
             'duration',
-            'rating',
             'imdb_rating',
             'tags',
         ]

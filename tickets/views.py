@@ -56,7 +56,6 @@ def get_movies(request):
             'actors': movie.actors,
             'release_date': movie.release_date,
             'duration': movie.duration,
-            'rating': movie.rating,
             'imdb_rating': movie.imdb_rating,
             'tags': movie.tags,
         }
@@ -78,7 +77,7 @@ class MovieViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter]
     search_fields = [
         'name', 'release_date', 'duration',
-        'rating', 'imdb_rating', 'tags', 'actors','show_times',
+         'imdb_rating', 'tags', 'actors','show_times',
     ]
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
@@ -154,7 +153,6 @@ class ReservationViewSet(viewsets.ModelViewSet):
                 "sponsor_video": reservation.movie.sponsor_video,
                 "release_date": reservation.movie.release_date,
                 "duration": reservation.movie.duration,
-                "rating": reservation.movie.rating,
                 "imdb_rating": reservation.movie.imdb_rating,
                 "tags": reservation.movie.tags,
                 "actors": reservation.movie.actors,
