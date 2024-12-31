@@ -89,7 +89,6 @@ WSGI_APPLICATION = 'events_api.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
@@ -100,7 +99,6 @@ DATABASES = {
         'PORT': os.getenv('DB_PORT', '3306'),
     }
 }
-
 
 
 
@@ -151,3 +149,5 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles_build', 'static')
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+STRIPE_SECRET_KEY = 'sk_test_51QcB91PQGLUA69WNbCxEsr60VARQ3i1mWACwgV92ymiX57tDUaeWcWDC15QG4SS646fFLd60t27hEpRGqDcRwUxk00J7Ma14BC'
+STRIPE_PUBLISHABLE_KEY = 'pk_test_51QcB91PQGLUA69WNBFYkOXkxie9CAGZo1C0dwZNWCc3OL2SyZbxqvXsVuTCGjekRdfUtPGQoB4wTa8WiVM68ohsM00aOQDY9VP'

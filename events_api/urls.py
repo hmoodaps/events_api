@@ -21,7 +21,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 from tickets import views
-from tickets.views import create_superuser, get_movies
+from tickets.views import create_superuser, get_movies, create_payment_intent
 
 router = routers.DefaultRouter()
 router.register('guests', views.GuestViewSet)
@@ -33,6 +33,8 @@ urlpatterns = [
 
     path('admin/', admin.site.urls),
     path('viewsets/', include(router.urls)),
+    path('create-payment-intent/', create_payment_intent, name='create_payment_intent'),
+
     path('create-superuser/', create_superuser, name='create-superuser'),
 ]
 if settings.DEBUG:

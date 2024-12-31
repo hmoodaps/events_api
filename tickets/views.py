@@ -6,11 +6,36 @@ from rest_framework.decorators import action, authentication_classes, permission
 from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.utils import json
 
 from .models import Guest, Reservation
 from .models import Movie
 from .serializer import GuestSerializer, MovieSerializer, ReservationSerializer
 
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import stripe
+from django.conf import settings
+
+stripe.api_key = settings.STRIPE_SECRET_KEY
+
+@csrf_exempt
+def create_payment_intent(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            amount = data['amount']
+            currency = data['currency']
+            payment_method_type = data.get('payment_method_type', 'card')
+
+            intent = stripe.PaymentIntent.create(
+                amount=int(amount),
+                currency=currency,
+                payment_method_types=[payment_method_type],
+            )
+            return JsonResponse({'clientSecret': intent['client_secret']})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
 
 
 @api_view(['POST'])
