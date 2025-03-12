@@ -9,7 +9,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Guest, Reservation, Movie
-from .serializer import MovieSerializer, ReservationSerializer
+from .serializer import MovieSerializer, ReservationSerializer, GuestSerializer
+
 
 class StripeKeys(APIView):
     permission_classes = [AllowAny]
@@ -93,6 +94,9 @@ def get_movies(request):
     return Response(data)
 
 
+class GuestViewSet(viewsets.ModelViewSet):
+    queryset = Guest.objects.all()
+    serializer_class = GuestSerializer
 
 
 class MovieViewSet(viewsets.ModelViewSet):
