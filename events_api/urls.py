@@ -29,13 +29,12 @@ router.register('movies', views.MovieViewSet)
 router.register('reservations', views.ReservationViewSet)
 
 urlpatterns = [
-    path('movies/', get_movies, name='get_movies'),
-    path('stripe_keys/', StripeKeys.as_view(), name='stripe_keys'),
-
+    path('movies/', views.get_movies, name='get_movies'),
+    path('stripe_keys/', views.StripeKeys.as_view(), name='stripe_keys'),  # النقطة النهاية لاسترجاع المفاتيح
     path('admin/', admin.site.urls),
     path('viewsets/', include(router.urls)),
-
-    path('create-superuser/', create_superuser, name='create-superuser'),
+    path('create-guest/', views.create_guest, name='create-guest'),  # النقطة النهاية لإنشاء الضيف
+    path('create-superuser/', views.create_superuser, name='create-superuser'),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

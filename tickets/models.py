@@ -34,13 +34,9 @@ class Movie(models.Model):
 
 class Guest(models.Model):
     id = models.CharField(max_length=100, primary_key=True)  # المفتاح الأساسي
-    seats = models.JSONField(default=list)  # مصفوفة
-    seat_price = models.FloatField(default=0.0)  # سعر المقعد
-    total_price = models.FloatField(default=0.0)  # السعر الكلي
-    show_date = models.CharField(max_length=20, default="2024-01-01")  # تاريخ العرض
-    show_time = models.CharField(max_length=20, default="12:00 PM")  # وقت العرض
-    movie_id = models.IntegerField()  # معرف الفيلم
-    age = models.IntegerField()
+    def __str__(self):
+        return self.id
+
 
 
 

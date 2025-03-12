@@ -3,36 +3,14 @@ from rest_framework import status, viewsets, filters, permissions
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.admin import User
 from rest_framework.authtoken.models import Token
-from rest_framework.decorators import action, authentication_classes, permission_classes
-from rest_framework.decorators import api_view
+from rest_framework.decorators import action, api_view, authentication_classes, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Guest, Reservation
-from .models import Movie
-from .serializer import GuestSerializer, MovieSerializer, ReservationSerializer
+from .models import Guest, Reservation, Movie
+from .serializer import MovieSerializer, ReservationSerializer
 
-
-# stripe.api_key = settings.STRIPE_SECRET_KEY
-#
-# @csrf_exempt
-# def create_payment_intent(request):
-#     if request.method == 'POST':
-#         try:
-#             data = json.loads(request.body)
-#             amount = data['amount']
-#             currency = data['currency']
-#             payment_method_type = data.get('payment_method_type', 'card')
-#
-#             intent = stripe.PaymentIntent.create(
-#                 amount=int(amount),
-#                 currency=currency,
-#                 payment_method_types=[payment_method_type],
-#             )
-#             return JsonResponse({'clientSecret': intent['client_secret']})
-#         except Exception as e:
-#             return JsonResponse({'error': str(e)}, status=400)
 class StripeKeys(APIView):
     permission_classes = [AllowAny]
 
@@ -41,7 +19,6 @@ class StripeKeys(APIView):
             'secret_key': settings.STRIPE_SECRET_KEY,
             'publishable_key': settings.STRIPE_PUBLISHABLE_KEY
         })
-
 
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])  # إضافة المصادقة بواسطة التوكن
@@ -63,6 +40,29 @@ def create_superuser(request):
         }, status=status.HTTP_201_CREATED)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+@api_view(['POST'])
+def create_guest(request):
+    # نأخذ فقط الـ id في الطلب
+    guest_id = request.data.get('id')
+
+    if not guest_id:
+        return Response({"error": "Guest id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    # إنشاء الضيف بناءً على id فقط
+    try:
+        guest = Guest.objects.create(id=guest_id)
+        guest.save()
+
+        return Response({
+            "id": guest.id
+        }, status=status.HTTP_201_CREATED)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
 @api_view(['GET'])
 def get_movies(request):
     movies = Movie.objects.all()
@@ -93,12 +93,6 @@ def get_movies(request):
     return Response(data)
 
 
-class GuestViewSet(viewsets.ModelViewSet):
-    queryset = Guest.objects.all()
-    serializer_class = GuestSerializer
-    filter_backends = [filters.SearchFilter]
-    search_fields = ['id']
-    authentication_classes = [TokenAuthentication]
 
 
 class MovieViewSet(viewsets.ModelViewSet):
@@ -160,13 +154,6 @@ class ReservationViewSet(viewsets.ModelViewSet):
             "reservation_code": reservation.reservations_code,
             "guest": {
                 "id": reservation.guest.id,
-                "age": reservation.guest.id,
-                "seats": reservation.guest.seats,
-                "seat_price": reservation.guest.seat_price,
-                "total_price": reservation.guest.total_price,
-                "show_date": reservation.guest.show_date,
-                "show_time": reservation.guest.show_time,
-                "movie_id": reservation.guest.movie_id,
             },
             "movie": {
                 "id": reservation.movie.id,
