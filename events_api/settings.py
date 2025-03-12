@@ -13,6 +13,8 @@ import pymysql
 pymysql.install_as_MySQLdb()
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -89,6 +91,7 @@ WSGI_APPLICATION = 'events_api.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
@@ -149,5 +152,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles_build', 'static')
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-STRIPE_SECRET_KEY = 'sk_test_51QcB91PQGLUA69WNbCxEsr60VARQ3i1mWACwgV92ymiX57tDUaeWcWDC15QG4SS646fFLd60t27hEpRGqDcRwUxk00J7Ma14BC'
-STRIPE_PUBLISHABLE_KEY = 'pk_test_51QcB91PQGLUA69WNBFYkOXkxie9CAGZo1C0dwZNWCc3OL2SyZbxqvXsVuTCGjekRdfUtPGQoB4wTa8WiVM68ohsM00aOQDY9VP'
+load_dotenv()
+
+STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
+STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY')

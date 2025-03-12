@@ -21,7 +21,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 from tickets import views
-from tickets.views import create_superuser, get_movies, create_payment_intent
+from tickets.views import create_superuser, get_movies, StripeKeys
 
 router = routers.DefaultRouter()
 router.register('guests', views.GuestViewSet)
@@ -30,10 +30,10 @@ router.register('reservations', views.ReservationViewSet)
 
 urlpatterns = [
     path('movies/', get_movies, name='get_movies'),
+    path('stripe_keys/', StripeKeys.as_view(), name='stripe_keys'),
 
     path('admin/', admin.site.urls),
     path('viewsets/', include(router.urls)),
-    path('create-payment-intent/', create_payment_intent, name='create_payment_intent'),
 
     path('create-superuser/', create_superuser, name='create-superuser'),
 ]
