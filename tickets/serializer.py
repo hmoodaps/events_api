@@ -4,10 +4,7 @@ from .models import Movie, Guest, Reservation
 class MovieSerializer(serializers.ModelSerializer):
     class Meta:
         model = Movie
-        fields = ['id', 'name', 'show_times', 'added_date', 'seats', 'available_seats',
-                  'reservations', 'photo', 'ticket_price', 'reserved_seats', 'description',
-                  'short_description', 'vertical_photo', 'sponsor_video', 'actors', 'release_date',
-                  'duration', 'imdb_rating', 'tags']
+        fields = ['id', 'name', 'show_times', 'seats', 'available_seats', 'reservations', 'photo', 'vertical_photo', 'ticket_price', 'reserved_seats', 'description', 'short_description', 'sponsor_video', 'actors', 'release_date', 'added_date', 'duration', 'imdb_rating', 'tags']
 
 
 class GuestSerializer(serializers.ModelSerializer):

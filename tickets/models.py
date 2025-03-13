@@ -22,16 +22,16 @@ class Movie(models.Model):
     )
     vertical_photo = models.CharField(max_length=255, blank=True, null=True)
     ticket_price = models.FloatField()
-    reserved_seats = models.JSONField(default=default_empty_list, blank=True)  # تعديل من lambda إلى دالة ثابتة
+    reserved_seats = models.JSONField(default=default_empty_list, blank=True)
     description = models.TextField(blank=True, null=True)  # دعم القيم الفارغة
     short_description = models.TextField(max_length=150, blank=True, null=True)
     sponsor_video = models.URLField(blank=True, null=True)
-    actors = models.JSONField(default=default_empty_list, blank=True)  # تعديل من lambda إلى دالة ثابتة
+    actors = models.JSONField(default=default_empty_list, blank=True)
     release_date = models.DateField(blank=True, null=True)
     added_date = models.DateField(auto_now_add=True)  # تعيينه تلقائيًا عند الإضافة
     duration = models.CharField(max_length=50, blank=True, null=True)
     imdb_rating = models.FloatField(blank=True, null=True)
-    tags = models.JSONField(default=default_empty_list, blank=True)  # تعديل من lambda إلى دالة ثابتة
+    tags = models.JSONField(default=default_empty_list, blank=True)
 
     def __str__(self):
         return self.name

@@ -76,21 +76,28 @@ def create_guest(request):
 
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
-@permission_classes([IsAuthenticated, CanCreateReservationPermission])  # إضافة صلاحية الضيف
+@permission_classes([IsAuthenticated, CanCreateReservationPermission])
 def create_reservation(request):
     guest_id = request.data.get('guest_id')
     movie_id = request.data.get('movie_id')
+    seat_number = request.data.get('seat_number')  # استلام رقم المقعد المحجوز
 
-    if not guest_id or not movie_id:
-        return Response({"error": "guest_id and movie_id are required"}, status=status.HTTP_400_BAD_REQUEST)
+    if not guest_id or not movie_id or not seat_number:
+        return Response({"error": "guest_id, movie_id, and seat_number are required"}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
         guest = Guest.objects.get(id=guest_id)
         movie = Movie.objects.get(id=movie_id)
 
+        # إضافة المقعد المحجوز إلى reserved_seats
+        if seat_number not in movie.reserved_seats:
+            movie.reserved_seats.append(seat_number)
+            movie.save()  # حفظ التعديل في جدول الأفلام
+
+        # إنشاء الحجز
         reservation = Reservation.objects.create(guest=guest, movie=movie, reservations_code=generate_reservation_code())
 
-        return Response({"reservation_code": reservation.reservations_code}, status=status.HTTP_201_CREATED)
+        return Response({"reservation_code": reservation.reservations_code, "reserved_seat": seat_number}, status=status.HTTP_201_CREATED)
 
     except Guest.DoesNotExist:
         return Response({"error": "Guest not found"}, status=status.HTTP_404_NOT_FOUND)
