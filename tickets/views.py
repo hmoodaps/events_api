@@ -116,7 +116,7 @@ def get_movies(request):
             'photo': movie.photo,
             'vertical_photo': movie.vertical_photo,
             'ticket_price': movie.ticket_price,
-            # 'reserved_seats': movie.reserved_seats,
+            'reserved_seats': movie.reserved_seats,
             'description': movie.description,
             'short_description': movie.short_description,
             'sponsor_video': movie.sponsor_video,

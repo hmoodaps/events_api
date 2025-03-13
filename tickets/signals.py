@@ -1,8 +1,6 @@
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
-
-from .models import Reservation
-
+from .models import Movie, Reservation
 
 @receiver(post_save, sender=Reservation)
 def update_reserved_seats_on_create(sender, instance, created, **kwargs):

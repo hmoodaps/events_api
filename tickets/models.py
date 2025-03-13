@@ -22,7 +22,7 @@ class Movie(models.Model):
     )
     vertical_photo = models.CharField(max_length=255, blank=True, null=True)
     ticket_price = models.FloatField()
-    # reserved_seats = models.JSONField(default=default_empty_list, blank=True)  # تعديل من lambda إلى دالة ثابتة
+    reserved_seats = models.JSONField(default=default_empty_list, blank=True)  # تعديل من lambda إلى دالة ثابتة
     description = models.TextField(blank=True, null=True)  # دعم القيم الفارغة
     short_description = models.TextField(max_length=150, blank=True, null=True)
     sponsor_video = models.URLField(blank=True, null=True)
