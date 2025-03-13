@@ -2,6 +2,9 @@ from django.db import models
 import random
 import string
 
+from rest_framework.authtoken.admin import User
+
+
 # الدالة لتعريف القيم الافتراضية
 def default_empty_list():
     return []
@@ -34,6 +37,7 @@ class Movie(models.Model):
 
 
 class Guest(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
     id = models.CharField(max_length=100, primary_key=True)
 
     def __str__(self):

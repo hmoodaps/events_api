@@ -52,8 +52,14 @@ def create_guest(request):
         return Response({"error": "Guest id is required"}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        guest, created = Guest.objects.get_or_create(id=guest_id)
-        token, _ = Token.objects.get_or_create(user=guest)
+        # إنشاء مستخدم جديد للضيف (إذا كنت ترغب في ربطه بحساب)
+        user, created = User.objects.get_or_create(username=guest_id)
+
+        # إنشاء أو العثور على الضيف المرتبط بالمستخدم
+        guest, created = Guest.objects.get_or_create(id=guest_id, user=user)
+
+        # إنشاء التوكن للمستخدم
+        token, _ = Token.objects.get_or_create(user=user)
 
         return Response({
             "id": guest.id,
