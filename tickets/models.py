@@ -45,11 +45,16 @@ class Guest(models.Model):
         return f"Guest {self.id}"
 
     def save(self, *args, **kwargs):
-        """عند إنشاء ضيف جديد، تأكد من إضافته إلى مجموعة الضيوف."""
-        super().save(*args, **kwargs)
-        guests_group, _ = Group.objects.get_or_create(name='Guests')
-        self.user.groups.add(guests_group)
+        """عند إنشاء ضيف جديد، تأكد من إنشاء مستخدم فريد له وإضافته إلى مجموعة الضيوف."""
+        if not self.user:  # إذا لم يكن هناك مستخدم مرتبط بالضيف، أنشئه
+            user, created = User.objects.get_or_create(username=self.id)  # استخدام الـ id الخاص بالضيف كاسم مستخدم
+            self.user = user  # ربط الـ User بالضيف
 
+        super().save(*args, **kwargs)  # حفظ الضيف
+
+        # إضافة الضيف إلى مجموعة "Guests"
+        guests_group, _ = Group.objects.get_or_create(name='Guests')
+        self.user.groups.add(guests_group)  # إضافة الـ User إلى مجموعة الضيوف
 
 
 def generate_reservation_code():
