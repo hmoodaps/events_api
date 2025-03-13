@@ -17,6 +17,7 @@ urlpatterns = [
     path('create-guest/', views.create_guest, name='create-guest'),
     path('create-superuser/', views.create_superuser, name='create-superuser'),
     path('create-reservation/', views.create_reservation, name='create-reservation'),
+    path('movies/', views.get_movies, name='movies'),  # إضافة الرابط لهذه الدالة
 ]
 
 if settings.DEBUG:
