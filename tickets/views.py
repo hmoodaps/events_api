@@ -1,15 +1,15 @@
 from django.conf import settings
-from rest_framework import status, viewsets, filters, permissions
+from rest_framework import status, viewsets, filters
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.admin import User
 from rest_framework.authtoken.models import Token
-from rest_framework.decorators import action, api_view, authentication_classes, permission_classes
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Guest, Reservation, Movie
-from .serializer import MovieSerializer, ReservationSerializer, GuestSerializer
+from .models import Guest, Reservation, Movie, generate_reservation_code
+from .serializer import ReservationSerializer, MovieSerializer, GuestSerializer
 
 
 class StripeKeys(APIView):
@@ -20,6 +20,7 @@ class StripeKeys(APIView):
             'secret_key': settings.STRIPE_SECRET_KEY,
             'publishable_key': settings.STRIPE_PUBLISHABLE_KEY
         })
+
 
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])  # إضافة المصادقة بواسطة التوكن
@@ -43,22 +44,20 @@ def create_superuser(request):
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-
 @api_view(['POST'])
 def create_guest(request):
-    # نأخذ فقط الـ id في الطلب
     guest_id = request.data.get('id')
 
     if not guest_id:
         return Response({"error": "Guest id is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-    # إنشاء الضيف بناءً على id فقط
     try:
-        guest = Guest.objects.create(id=guest_id)
-        guest.save()
+        guest, created = Guest.objects.get_or_create(id=guest_id)
+        token, _ = Token.objects.get_or_create(user=guest)
 
         return Response({
-            "id": guest.id
+            "id": guest.id,
+            "token": token.key  # إرجاع التوكن الخاص بالضيف
         }, status=status.HTTP_201_CREATED)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -71,7 +70,7 @@ def get_movies(request):
     for movie in movies:
         movie_data = {
             'id': movie.id,
-            'added_Date':movie.added_Date,
+            'added_date': movie.added_date,
             'name': movie.name,
             'show_times': movie.show_times,
             'seats': movie.seats,
@@ -80,7 +79,7 @@ def get_movies(request):
             'photo': movie.photo,
             'vertical_photo': movie.vertical_photo,
             'ticket_price': movie.ticket_price,
-            'reservedSeats': movie.reservedSeats,
+            'reserved_seats': movie.reserved_seats,
             'description': movie.description,
             'short_description': movie.short_description,
             'sponsor_video': movie.sponsor_video,
@@ -94,6 +93,32 @@ def get_movies(request):
     return Response(data)
 
 
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def create_reservation(request):
+    guest_id = request.data.get('guest_id')
+    movie_id = request.data.get('movie_id')
+
+    if not guest_id or not movie_id:
+        return Response({"error": "guest_id and movie_id are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        guest = Guest.objects.get(id=guest_id)
+        movie = Movie.objects.get(id=movie_id)
+
+        reservation = Reservation.objects.create(guest=guest, movie=movie, reservations_code=generate_reservation_code())
+
+        return Response({"reservation_code": reservation.reservations_code}, status=status.HTTP_201_CREATED)
+
+    except Guest.DoesNotExist:
+        return Response({"error": "Guest not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Movie.DoesNotExist:
+        return Response({"error": "Movie not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
 class GuestViewSet(viewsets.ModelViewSet):
     queryset = Guest.objects.all()
     serializer_class = GuestSerializer
@@ -104,8 +129,7 @@ class MovieViewSet(viewsets.ModelViewSet):
     serializer_class = MovieSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = [
-        'name', 'release_date', 'duration',
-         'imdb_rating', 'tags', 'actors','show_times',
+        'name', 'release_date', 'duration', 'imdb_rating', 'tags', 'actors', 'show_times',
     ]
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
@@ -115,67 +139,9 @@ class MovieViewSet(viewsets.ModelViewSet):
         movie.delete()
         return Response({"message": "Movie and related reservations deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
 
+
 class ReservationViewSet(viewsets.ModelViewSet):
     queryset = Reservation.objects.all()
     serializer_class = ReservationSerializer
     authentication_classes = [TokenAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
-    filter_backends = [filters.SearchFilter]
-    search_fields = ['reservations_code','movie__name', 'movie__actors', 'movie__tags']
-
-    @action(detail=False, methods=['get'], url_path='search-by-seat')
-    def search_by_seat(self, request):
-        seat_number = request.query_params.get('seat')
-        if not seat_number:
-            return Response({"detail": "Seat number is required"}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            reservation = Reservation.objects.filter(guest__seats__contains=[seat_number]).first()
-
-            if reservation:
-                response_data = self.get_reservation_response_data(reservation)
-                return Response(response_data, status=status.HTTP_200_OK)
-            else:
-                return Response({"detail": "No reservation found for this seat"}, status=status.HTTP_404_NOT_FOUND)
-
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-    def retrieve(self, request, *args, **kwargs):
-        reservation_code = kwargs.get('pk')
-
-        try:
-            reservation = Reservation.objects.get(reservations_code=reservation_code)
-            response_data = self.get_reservation_response_data(reservation)
-            return Response(response_data, status=status.HTTP_200_OK)
-
-        except Reservation.DoesNotExist:
-            return Response({"detail": "Reservation not found"}, status=status.HTTP_404_NOT_FOUND)
-
-    @staticmethod
-    def get_reservation_response_data(reservation):
-        return {
-            "reservation_code": reservation.reservations_code,
-            "guest": {
-                "id": reservation.guest.id,
-            },
-            "movie": {
-                "id": reservation.movie.id,
-                "name": reservation.movie.name,
-                "seats": reservation.movie.seats,
-                'added_Date': reservation.movie.added_date,
-                "available_seats": reservation.movie.available_seats,
-                "reservations": reservation.movie.reservations,
-                "photo": reservation.movie.photo,
-                "ticket_price": reservation.movie.ticket_price,
-                "reservedSeats": reservation.movie.reservedSeats,
-                "description": reservation.movie.description,
-                "vertical_photo": reservation.movie.vertical_photo,
-                "sponsor_video": reservation.movie.sponsor_video,
-                "release_date": reservation.movie.release_date,
-                "duration": reservation.movie.duration,
-                "imdb_rating": reservation.movie.imdb_rating,
-                "tags": reservation.movie.tags,
-                "actors": reservation.movie.actors,
-            }
-        }
+    permission_classes = [IsAuthenticated]
