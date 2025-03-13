@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.contrib.auth.models import Group
 from rest_framework import status, viewsets, filters
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.admin import User
@@ -9,6 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Guest, Reservation, Movie, generate_reservation_code
+from .permissions import CanCreateReservationPermission
 from .serializer import ReservationSerializer, MovieSerializer, GuestSerializer
 
 
@@ -23,7 +25,7 @@ class StripeKeys(APIView):
 
 
 @api_view(['POST'])
-@authentication_classes([TokenAuthentication])  # إضافة المصادقة بواسطة التوكن
+@authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])  # التأكد من أن المستخدم مسجل دخوله
 def create_superuser(request):
     username = request.data.get('username')
@@ -55,16 +57,45 @@ def create_guest(request):
         # إنشاء مستخدم جديد للضيف (إذا كنت ترغب في ربطه بحساب)
         user, created = User.objects.get_or_create(username=guest_id)
 
+        # إضافة الضيف إلى مجموعة "Guests" الخاصة بهم
+        guests_group, _ = Group.objects.get_or_create(name='Guests')
+        user.groups.add(guests_group)
+
         # إنشاء أو العثور على الضيف المرتبط بالمستخدم
         guest, created = Guest.objects.get_or_create(id=guest_id, user=user)
 
-        # إنشاء التوكن للمستخدم
+        # إنشاء التوكن للمستخدم (الضيف)
         token, _ = Token.objects.get_or_create(user=user)
 
         return Response({
             "id": guest.id,
             "token": token.key  # إرجاع التوكن الخاص بالضيف
         }, status=status.HTTP_201_CREATED)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated, CanCreateReservationPermission])  # إضافة صلاحية الضيف
+def create_reservation(request):
+    guest_id = request.data.get('guest_id')
+    movie_id = request.data.get('movie_id')
+
+    if not guest_id or not movie_id:
+        return Response({"error": "guest_id and movie_id are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        guest = Guest.objects.get(id=guest_id)
+        movie = Movie.objects.get(id=movie_id)
+
+        reservation = Reservation.objects.create(guest=guest, movie=movie, reservations_code=generate_reservation_code())
+
+        return Response({"reservation_code": reservation.reservations_code}, status=status.HTTP_201_CREATED)
+
+    except Guest.DoesNotExist:
+        return Response({"error": "Guest not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Movie.DoesNotExist:
+        return Response({"error": "Movie not found"}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -99,30 +130,6 @@ def get_movies(request):
     return Response(data)
 
 
-@api_view(['POST'])
-@authentication_classes([TokenAuthentication])
-@permission_classes([IsAuthenticated])
-def create_reservation(request):
-    guest_id = request.data.get('guest_id')
-    movie_id = request.data.get('movie_id')
-
-    if not guest_id or not movie_id:
-        return Response({"error": "guest_id and movie_id are required"}, status=status.HTTP_400_BAD_REQUEST)
-
-    try:
-        guest = Guest.objects.get(id=guest_id)
-        movie = Movie.objects.get(id=movie_id)
-
-        reservation = Reservation.objects.create(guest=guest, movie=movie, reservations_code=generate_reservation_code())
-
-        return Response({"reservation_code": reservation.reservations_code}, status=status.HTTP_201_CREATED)
-
-    except Guest.DoesNotExist:
-        return Response({"error": "Guest not found"}, status=status.HTTP_404_NOT_FOUND)
-    except Movie.DoesNotExist:
-        return Response({"error": "Movie not found"}, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class GuestViewSet(viewsets.ModelViewSet):

@@ -1,3 +1,4 @@
+from django.contrib.auth.models import Group
 from django.db import models
 import random
 import string
@@ -42,6 +43,13 @@ class Guest(models.Model):
 
     def __str__(self):
         return f"Guest {self.id}"
+
+    def save(self, *args, **kwargs):
+        """عند إنشاء ضيف جديد، تأكد من إضافته إلى مجموعة الضيوف."""
+        super().save(*args, **kwargs)
+        guests_group, _ = Group.objects.get_or_create(name='Guests')
+        self.user.groups.add(guests_group)
+
 
 
 def generate_reservation_code():
