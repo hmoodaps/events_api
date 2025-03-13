@@ -45,6 +45,26 @@ def create_superuser(request):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from .models import Reservation
+
+@api_view(['DELETE'])
+def delete_reservation(request):
+    reservation_code = request.data.get('reservation_code')
+
+    if not reservation_code:
+        return Response({"error": "reservation_code is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        reservation = Reservation.objects.get(reservations_code=reservation_code)
+        reservation.delete()
+        return Response({"message": "Reservation deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+    except Reservation.DoesNotExist:
+        return Response({"error": "Reservation not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
 def create_guest(request):
