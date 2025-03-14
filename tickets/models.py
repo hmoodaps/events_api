@@ -64,19 +64,17 @@ def generate_reservation_code():
 
 
 class Reservation(models.Model):
-    movie = models.ForeignKey(Movie, related_name='movie_reservations', on_delete=models.CASCADE)  # تغيير الـ related_name هنا
-    guest = models.ForeignKey(Guest, related_name='guest_reservations', on_delete=models.CASCADE)  # تغيير الـ related_name هنا
+    movie = models.ForeignKey(Movie, related_name='movie_reservations', on_delete=models.CASCADE)
+    guest = models.ForeignKey(Guest, related_name='guest_reservations', on_delete=models.CASCADE)
     reservations_code = models.CharField(max_length=6, unique=True, blank=True, editable=False)
 
     def save(self, *args, **kwargs):
-        """ضمان أن كود الحجز فريد، مع محاولات غير محدودة حتى نحصل على كود غير مكرر."""
         if not self.reservations_code:
             while True:
                 code = generate_reservation_code()
                 if not Reservation.objects.filter(reservations_code=code).exists():
                     self.reservations_code = code
                     break
-
         super().save(*args, **kwargs)
 
     def __str__(self):
