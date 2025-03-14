@@ -153,46 +153,23 @@ def create_reservation(request):
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-
 @api_view(['GET'])
 def get_movies(request):
-    movies = Movie.objects.all()
-    data = []
-    for movie in movies:
-        show_times_data = []
+    movies = Movie.objects.prefetch_related("show_times").all()  # تحسين أداء الاستعلام
+    serializer = MovieSerializer(movies, many=True)  # استخدام السيريالايزر مباشرة
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
-        for showtime in movie.show_times.all():
-            showtime_data = {
-                'id': showtime.id,
-                'date': showtime.date,
-                'time': showtime.time,
-                'hall': showtime.hall,
-                'total_seats': showtime.total_seats,
-                'available_seats': showtime.available_seats,
-                'ticket_price': showtime.ticket_price,
-                'reserved_seats': showtime.reserved_seats,
-            }
-            show_times_data.append(showtime_data)
-
-        movie_data = {
-            'id': movie.id,
-            'added_date': movie.added_date,
-            'name': movie.name,
-            'show_times': show_times_data,  # هنا تم تحديثها لعرض تفاصيل العروض
-            'photo': movie.photo,
-            'vertical_photo': movie.vertical_photo,
-            'description': movie.description,
-            'short_description': movie.short_description,
-            'sponsor_video': movie.sponsor_video,
-            'actors': movie.actors,
-            'release_date': movie.release_date,
-            'duration': movie.duration,
-            'imdb_rating': movie.imdb_rating,
-            'tags': movie.tags,
-        }
-        data.append(movie_data)
-
-    return Response(data)
+#
+# @api_view(['POST'])
+# def create_movie(request):
+#     """إضافة فيلم جديد مع أوقات العرض"""
+#     serializer = MovieSerializer(data=request.data, context={'request': request})
+#
+#     if serializer.is_valid():
+#         serializer.save()
+#         return Response(serializer.data, status=status.HTTP_201_CREATED)
+#
+#     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class GuestViewSet(viewsets.ModelViewSet):

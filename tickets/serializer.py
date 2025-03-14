@@ -7,10 +7,10 @@ from .models import Movie, Showtime
 class ShowtimeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Showtime
-        fields = ['date', 'time', 'hall', 'total_seats', 'available_seats', 'ticket_price', 'reserved_seats']
+        fields = ['id', 'date', 'time', 'hall', 'total_seats', 'available_seats', 'ticket_price', 'reserved_seats']
 
 class MovieSerializer(serializers.ModelSerializer):
-    show_times = ShowtimeSerializer(many=True)  # السماح بإرسال أوقات العرض مع الفيلم
+    show_times = ShowtimeSerializer(many=True, read_only=True)  # السماح بإرسال أوقات العرض مع الفيلم
 
     class Meta:
         model = Movie
@@ -22,7 +22,7 @@ class MovieSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         """إنشاء فيلم مع أوقات العرض"""
-        show_times_data = validated_data.pop('show_times', [])  # استخراج أوقات العرض من البيانات
+        show_times_data = self.context['request'].data.get('show_times', [])  # استخراج أوقات العرض من البيانات
         movie = Movie.objects.create(**validated_data)
 
         for showtime_data in show_times_data:

@@ -27,7 +27,6 @@ class Movie(models.Model):
     duration = models.CharField(max_length=50, blank=True, null=True)
     imdb_rating = models.FloatField(blank=True, null=True)
     tags = models.JSONField(default=default_empty_list, blank=True)
-    show_times = models.ManyToManyField('Showtime', related_name='movies', blank=True)
 
     def __str__(self):
         return self.name
@@ -35,7 +34,7 @@ class Movie(models.Model):
 
 class Showtime(models.Model):
     """ موديل يمثل عرضًا معينًا للفيلم في يوم محدد وقاعة معينة """
-    movie = models.ForeignKey(Movie, related_name="showtimes", on_delete=models.CASCADE)
+    movie = models.ForeignKey(Movie, related_name="show_times", on_delete=models.CASCADE)
     date = models.DateField()  # تاريخ العرض
     time = models.TimeField()  # وقت العرض
     hall = models.CharField(max_length=50)  # القاعة
