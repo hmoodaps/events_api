@@ -1,10 +1,37 @@
 from rest_framework import serializers
-from .models import Movie, Guest, Reservation
+
+from .models import Guest, Reservation
+from .models import Movie, Showtime
+
+
+class ShowtimeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Showtime
+        fields = ['id', 'date', 'time', 'hall', 'total_seats', 'available_seats', 'ticket_price', 'reserved_seats']
+
 
 class MovieSerializer(serializers.ModelSerializer):
+    # استدعاء الـ ShowtimeSerializer لتضمين تفاصيل الشو تايم
+    show_times = ShowtimeSerializer(many=True, read_only=True)  # عرض تفاصيل الشو تايم (العروض المرتبطة بالفيلم)
+
     class Meta:
         model = Movie
-        fields = ['id', 'name', 'show_times', 'seats', 'available_seats', 'reservations', 'photo', 'vertical_photo', 'ticket_price', 'reserved_seats', 'description', 'short_description', 'sponsor_video', 'actors', 'release_date', 'added_date', 'duration', 'imdb_rating', 'tags']
+        fields = [
+            'id',
+            'name',
+            'show_times',  # تضمين العروض المرتبطة بالفيلم
+            'photo',
+            'vertical_photo',
+            'description',
+            'short_description',
+            'sponsor_video',
+            'actors',
+            'release_date',
+            'added_date',
+            'duration',
+            'imdb_rating',
+            'tags'
+        ]
 
 
 class GuestSerializer(serializers.ModelSerializer):

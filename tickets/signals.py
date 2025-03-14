@@ -1,23 +1,26 @@
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
-from .models import Movie, Reservation
+from .models import Showtime, Reservation
 
 @receiver(post_save, sender=Reservation)
 def update_reserved_seats_on_create(sender, instance, created, **kwargs):
     if created:
-        movie = instance.movie
-        movie.available_seats -= len(instance.movie.reserved_seats)  # خصم عدد المقاعد المحجوزة فقط
-        movie.reservations += 1
-        movie.save()
+        # الحصول على الـ Showtime المرتبط بالحجز
+        showtime = instance.movie.showtimes.get(id=instance.showtime.id)  # تأكد من أن لديك خاصية `showtime` في الحجز
+        # خصم المقاعد المحجوزة
+        showtime.available_seats -= len(instance.reserved_seats)
+        showtime.reserved_seats.extend(instance.reserved_seats)  # إضافة المقاعد المحجوزة إلى قائمة المقاعد المحجوزة
+        showtime.save()
 
 
 @receiver(post_delete, sender=Reservation)
 def update_reserved_seats_on_delete(sender, instance, **kwargs):
-    movie = instance.movie
-    for seat in instance.reserved_seats:  # ✅ إزالة المقاعد المحجوزة من الفيلم
-        if seat in movie.reserved_seats:
-            movie.reserved_seats.remove(seat)
-
-    movie.available_seats += len(instance.reserved_seats)  # ✅ إعادة المقاعد المتاحة
-    movie.reservations -= 1
-    movie.save()
+    # الحصول على الـ Showtime المرتبط بالحجز
+    showtime = instance.movie.showtimes.get(id=instance.showtime.id)  # تأكد من أن لديك خاصية `showtime` في الحجز
+    # إزالة المقاعد المحجوزة
+    for seat in instance.reserved_seats:
+        if seat in showtime.reserved_seats:
+            showtime.reserved_seats.remove(seat)
+    # إعادة المقاعد المتاحة
+    showtime.available_seats += len(instance.reserved_seats)
+    showtime.save()

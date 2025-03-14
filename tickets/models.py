@@ -6,35 +6,49 @@ import string
 from rest_framework.authtoken.admin import User
 
 
-# الدالة لتعريف القيم الافتراضية
+
 def default_empty_list():
     return []
 
+
 class Movie(models.Model):
     name = models.CharField(max_length=100)
-    show_times = models.JSONField(default=dict)
-    seats = models.IntegerField(default=100)
-    available_seats = models.IntegerField(default=100)
-    reservations = models.IntegerField(default=0, blank=True)
     photo = models.CharField(
         max_length=255,
         default="https://st2.depositphotos.com/1105977/9877/i/450/depositphotos_98775856-stock-photo-retro-film-production-accessories-still.jpg"
     )
     vertical_photo = models.CharField(max_length=255, blank=True, null=True)
-    ticket_price = models.FloatField()
-    reserved_seats = models.JSONField(default=default_empty_list, blank=True)
-    description = models.TextField(blank=True, null=True)  # دعم القيم الفارغة
+    description = models.TextField(blank=True, null=True)
     short_description = models.TextField(max_length=150, blank=True, null=True)
     sponsor_video = models.URLField(blank=True, null=True)
     actors = models.JSONField(default=default_empty_list, blank=True)
     release_date = models.DateField(blank=True, null=True)
-    added_date = models.DateField(auto_now_add=True)  # تعيينه تلقائيًا عند الإضافة
+    added_date = models.DateField(auto_now_add=True)
     duration = models.CharField(max_length=50, blank=True, null=True)
     imdb_rating = models.FloatField(blank=True, null=True)
     tags = models.JSONField(default=default_empty_list, blank=True)
+    show_times = models.ManyToManyField('Showtime', related_name='movies', blank=True)
 
     def __str__(self):
         return self.name
+
+
+class Showtime(models.Model):
+    """ موديل يمثل عرضًا معينًا للفيلم في يوم محدد وقاعة معينة """
+    movie = models.ForeignKey(Movie, related_name="showtimes", on_delete=models.CASCADE)
+    date = models.DateField()  # تاريخ العرض
+    time = models.TimeField()  # وقت العرض
+    hall = models.CharField(max_length=50)  # القاعة
+    total_seats = models.IntegerField(default=100)  # عدد المقاعد الكلي
+    available_seats = models.IntegerField(default=100)  # عدد المقاعد المتاحة
+    ticket_price = models.FloatField()  # سعر التذكرة
+    reserved_seats = models.JSONField(default=default_empty_list, blank=True)  # قائمة المقاعد المحجوزة
+
+    class Meta:
+        unique_together = ('movie', 'date', 'time', 'hall')  # منع التكرار لنفس الفيلم في نفس القاعة والتوقيت
+
+    def __str__(self):
+        return f"{self.movie.name} - {self.date} at {self.time} in {self.hall}"
 
 
 class Guest(models.Model):
@@ -66,6 +80,7 @@ def generate_reservation_code():
 class Reservation(models.Model):
     movie = models.ForeignKey(Movie, related_name='movie_reservations', on_delete=models.CASCADE)
     guest = models.ForeignKey(Guest, related_name='guest_reservations', on_delete=models.CASCADE)
+    showtime = models.ForeignKey(Showtime, related_name='reservations', on_delete=models.CASCADE)  # إضافة حقل showtime
     reservations_code = models.CharField(max_length=6, unique=True, blank=True, editable=False)
 
     def save(self, *args, **kwargs):

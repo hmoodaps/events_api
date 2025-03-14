@@ -7,6 +7,10 @@ from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from .models import Reservation, Showtime
 
 from .models import Guest, Movie, generate_reservation_code
 from .permissions import CanCreateReservationPermission
@@ -44,10 +48,6 @@ def create_superuser(request):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from rest_framework import status
-from .models import Reservation
 
 @api_view(['DELETE'])
 def delete_reservation(request):
@@ -100,49 +100,58 @@ def create_guest(request):
 def create_reservation(request):
     guest_id = request.data.get('guest_id')
     movie_id = request.data.get('movie_id')
-
-    # دعم seat_number و seat_numbers معًا
+    showtime_id = request.data.get('showtime_id')  # إضافة showtime_id
     seat_numbers = request.data.get('seat_numbers') or request.data.get('seat_number')
 
     # التأكد من أن seat_numbers هو قائمة حتى لو تم إرسال مقعد واحد فقط
     if isinstance(seat_numbers, str):
         seat_numbers = [seat_numbers]
 
-    if not guest_id or not movie_id or not seat_numbers:
-        return Response({"error": "guest_id, movie_id, and seat_numbers are required"},
+    if not guest_id or not movie_id or not showtime_id or not seat_numbers:
+        return Response({"error": "guest_id, movie_id, showtime_id, and seat_numbers are required"},
                         status=status.HTTP_400_BAD_REQUEST)
 
     try:
         guest = Guest.objects.get(id=guest_id)
         movie = Movie.objects.get(id=movie_id)
+        showtime = Showtime.objects.get(id=showtime_id)
 
-        # التحقق من عدم حجز المقاعد مسبقًا
-        unavailable_seats = set(seat_numbers) & set(movie.reserved_seats)
+        # التحقق من أن الفيلم يتطابق مع العرض المحدد
+        if showtime.movie != movie:
+            return Response({"error": "The selected showtime does not match the movie."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        # التحقق من عدم حجز المقاعد مسبقًا في العرض
+        unavailable_seats = set(seat_numbers) & set(showtime.reserved_seats)
         if unavailable_seats:
             return Response({"error": f"Seats {list(unavailable_seats)} are already reserved"},
                             status=status.HTTP_400_BAD_REQUEST)
 
         # إضافة المقاعد الجديدة فقط إلى reserved_seats (بدون رمز الحجز)
-        updated_seats = movie.reserved_seats + seat_numbers
-        movie.reserved_seats = updated_seats  # تحديث المقاعد فقط
-        movie.save()
+        updated_seats = showtime.reserved_seats + seat_numbers
+        showtime.reserved_seats = updated_seats
+        showtime.available_seats = showtime.total_seats - len(showtime.reserved_seats)  # تحديث المقاعد المتاحة
+        showtime.save()
 
-        # إنشاء الحجز (بدون تخزين رمز الحجز في reserved_seats)
+        # إنشاء الحجز (من غير إضافة المقاعد إلى reserved_seats في الحجز)
         reservation = Reservation.objects.create(
             guest=guest, movie=movie, reservations_code=generate_reservation_code()
         )
 
         return Response({
             "reservation_code": reservation.reservations_code,
-            "reserved_seats": seat_numbers  # عرض المقاعد المحجوزة فقط، بدون رمز الحجز
+            "reserved_seats": seat_numbers  # عرض المقاعد المحجوزة فقط
         }, status=status.HTTP_201_CREATED)
 
     except Guest.DoesNotExist:
         return Response({"error": "Guest not found"}, status=status.HTTP_404_NOT_FOUND)
     except Movie.DoesNotExist:
         return Response({"error": "Movie not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Showtime.DoesNotExist:
+        return Response({"error": "Showtime not found"}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 @api_view(['GET'])
@@ -150,18 +159,28 @@ def get_movies(request):
     movies = Movie.objects.all()
     data = []
     for movie in movies:
+        show_times_data = []
+
+        for showtime in movie.show_times.all():
+            showtime_data = {
+                'id': showtime.id,
+                'date': showtime.date,
+                'time': showtime.time,
+                'hall': showtime.hall,
+                'total_seats': showtime.total_seats,
+                'available_seats': showtime.available_seats,
+                'ticket_price': showtime.ticket_price,
+                'reserved_seats': showtime.reserved_seats,
+            }
+            show_times_data.append(showtime_data)
+
         movie_data = {
             'id': movie.id,
             'added_date': movie.added_date,
             'name': movie.name,
-            'show_times': movie.show_times,
-            'seats': movie.seats,
-            'available_seats': movie.available_seats,
-            'reservations': movie.reservations,
+            'show_times': show_times_data,  # هنا تم تحديثها لعرض تفاصيل العروض
             'photo': movie.photo,
             'vertical_photo': movie.vertical_photo,
-            'ticket_price': movie.ticket_price,
-            'reserved_seats': movie.reserved_seats,
             'description': movie.description,
             'short_description': movie.short_description,
             'sponsor_video': movie.sponsor_video,
@@ -172,9 +191,8 @@ def get_movies(request):
             'tags': movie.tags,
         }
         data.append(movie_data)
+
     return Response(data)
-
-
 
 
 class GuestViewSet(viewsets.ModelViewSet):
