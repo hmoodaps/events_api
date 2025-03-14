@@ -93,40 +93,48 @@ def create_guest(request):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated, CanCreateReservationPermission])
 def create_reservation(request):
     guest_id = request.data.get('guest_id')
     movie_id = request.data.get('movie_id')
-    seat_numbers = request.data.get('seat_numbers')  # استلام مصفوفة المقاعد المحجوزة
+
+    # دعم seat_number و seat_numbers معًا
+    seat_numbers = request.data.get('seat_numbers') or request.data.get('seat_number')
+
+    # التأكد من أن seat_numbers هو قائمة حتى لو تم إرسال مقعد واحد فقط
+    if isinstance(seat_numbers, str):
+        seat_numbers = [seat_numbers]
 
     if not guest_id or not movie_id or not seat_numbers:
-        return Response({"error": "guest_id, movie_id, and seat_numbers are required"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": "guest_id, movie_id, and seat_numbers are required"},
+                        status=status.HTTP_400_BAD_REQUEST)
 
     try:
         guest = Guest.objects.get(id=guest_id)
         movie = Movie.objects.get(id=movie_id)
 
-        # تحويل المقاعد إلى قائمة (في حال كانت سلسلة نصية)
-        if isinstance(seat_numbers, str):
-            seat_numbers = seat_numbers.split(',')
-
-        # التحقق من عدم حجز أي من المقاعد مسبقًا
+        # التحقق من عدم حجز المقاعد مسبقًا
         unavailable_seats = set(seat_numbers) & set(movie.reserved_seats)
         if unavailable_seats:
-            return Response({"error": f"Seats {list(unavailable_seats)} are already reserved"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": f"Seats {list(unavailable_seats)} are already reserved"},
+                            status=status.HTTP_400_BAD_REQUEST)
 
-        # إضافة المقاعد الجديدة فقط إلى `reserved_seats`
-        movie.reserved_seats.extend(seat_numbers)
-        movie.save()  # حفظ التعديل في قاعدة البيانات
+        # إضافة المقاعد الجديدة فقط إلى reserved_seats (بدون رمز الحجز)
+        updated_seats = movie.reserved_seats + seat_numbers
+        movie.reserved_seats = updated_seats  # تحديث المقاعد فقط
+        movie.save()
 
-        # إنشاء الحجز
-        reservation = Reservation.objects.create(guest=guest, movie=movie, reservations_code=generate_reservation_code())
+        # إنشاء الحجز (بدون تخزين رمز الحجز في reserved_seats)
+        reservation = Reservation.objects.create(
+            guest=guest, movie=movie, reservations_code=generate_reservation_code()
+        )
 
         return Response({
             "reservation_code": reservation.reservations_code,
-            "reserved_seats": seat_numbers  # إرجاع المقاعد المحجوزة فقط
+            "reserved_seats": seat_numbers  # عرض المقاعد المحجوزة فقط، بدون رمز الحجز
         }, status=status.HTTP_201_CREATED)
 
     except Guest.DoesNotExist:
