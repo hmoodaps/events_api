@@ -153,6 +153,22 @@ def create_reservation(request):
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+
+@api_view(['GET'])
+def get_reservation_by_code(request):
+    reservation_code = request.query_params.get('reservation_code')
+
+    if not reservation_code:
+        return Response({"error": "reservation_code is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        reservation = Reservation.objects.get(reservations_code=reservation_code)
+        serializer = ReservationSerializer(reservation)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Reservation.DoesNotExist:
+        return Response({"error": "Reservation not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
 @api_view(['GET'])
 def get_movies(request):
     movies = Movie.objects.prefetch_related("show_times").all()  # تحسين أداء الاستعلام

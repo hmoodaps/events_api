@@ -35,6 +35,8 @@ urlpatterns = [
 
     # رابط لحذف الحجز باستخدام رمز الحجز
     path('delete-reservation/', views.delete_reservation, name='delete-reservation'),
+path('get-reservation/', views.get_reservation_by_code, name='get-reservation'),
+
 ]
 
 # إضافات لملفات الوسائط والصور في وضع الـ DEBUG
