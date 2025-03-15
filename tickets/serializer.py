@@ -40,18 +40,9 @@ class GuestSerializer(serializers.ModelSerializer):
 class ReservationSerializer(serializers.ModelSerializer):
     movie = serializers.PrimaryKeyRelatedField(queryset=Movie.objects.all())
     guest = serializers.PrimaryKeyRelatedField(queryset=Guest.objects.all())
+    showtime = serializers.PrimaryKeyRelatedField(queryset=Showtime.objects.all())  # إضافة العرض
+    reserved_seats = serializers.ListField(child=serializers.CharField(), required=True)  # إرجاع المقاعد المحجوزة
 
     class Meta:
         model = Reservation
-        fields = ['id', 'movie', 'guest', 'reservations_code']
-
-    def create(self, validated_data):
-        """إنشاء حجز جديد باستخدام ID فقط دون الحاجة لجلب الكائنات يدويًا."""
-        return Reservation.objects.create(**validated_data)
-
-    def update(self, instance, validated_data):
-        """تحديث بيانات الحجز."""
-        instance.movie = validated_data.get('movie', instance.movie)
-        instance.guest = validated_data.get('guest', instance.guest)
-        instance.save()
-        return instance
+        fields = ['id', 'movie', 'guest', 'showtime', 'reservations_code', 'reserved_seats']

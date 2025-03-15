@@ -1,19 +1,18 @@
 from django.conf import settings
 from django.contrib.auth.models import Group
+from rest_framework import status
 from rest_framework import viewsets, filters
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.admin import User
 from rest_framework.authtoken.models import Token
-from rest_framework.decorators import api_view, authentication_classes, permission_classes
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.views import APIView
 from rest_framework.decorators import api_view
+from rest_framework.decorators import authentication_classes, permission_classes
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
-from rest_framework import status
-from .models import Reservation, Showtime
+from rest_framework.views import APIView
 
 from .models import Guest, Movie, generate_reservation_code
-from .permissions import CanCreateReservationPermission
+from .models import Reservation, Showtime
 from .serializer import ReservationSerializer, MovieSerializer, GuestSerializer
 
 
@@ -100,10 +99,9 @@ def create_guest(request):
 def create_reservation(request):
     guest_id = request.data.get('guest_id')
     movie_id = request.data.get('movie_id')
-    showtime_id = request.data.get('showtime_id')  # إضافة showtime_id
+    showtime_id = request.data.get('showtime_id')
     seat_numbers = request.data.get('seat_numbers') or request.data.get('seat_number')
 
-    # التأكد من أن seat_numbers هو قائمة حتى لو تم إرسال مقعد واحد فقط
     if isinstance(seat_numbers, str):
         seat_numbers = [seat_numbers]
 
@@ -116,31 +114,39 @@ def create_reservation(request):
         movie = Movie.objects.get(id=movie_id)
         showtime = Showtime.objects.get(id=showtime_id)
 
-        # التحقق من أن الفيلم يتطابق مع العرض المحدد
         if showtime.movie != movie:
             return Response({"error": "The selected showtime does not match the movie."},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        # التحقق من عدم حجز المقاعد مسبقًا في العرض
         unavailable_seats = set(seat_numbers) & set(showtime.reserved_seats)
         if unavailable_seats:
             return Response({"error": f"Seats {list(unavailable_seats)} are already reserved"},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        # إضافة المقاعد الجديدة فقط إلى reserved_seats (بدون رمز الحجز)
         updated_seats = showtime.reserved_seats + seat_numbers
         showtime.reserved_seats = updated_seats
-        showtime.available_seats = showtime.total_seats - len(showtime.reserved_seats)  # تحديث المقاعد المتاحة
+        showtime.available_seats = showtime.total_seats - len(showtime.reserved_seats)
         showtime.save()
 
-        # إنشاء الحجز (من غير إضافة المقاعد إلى reserved_seats في الحجز)
         reservation = Reservation.objects.create(
-            guest=guest, movie=movie, reservations_code=generate_reservation_code()
+            guest=guest,
+            movie=movie,
+            showtime=showtime,
+            reservations_code=generate_reservation_code()
         )
 
         return Response({
+            "id": reservation.id,
             "reservation_code": reservation.reservations_code,
-            "reserved_seats": seat_numbers  # عرض المقاعد المحجوزة فقط
+            "guest": guest.id,
+            "movie": movie.name,
+            "showtime": {
+                "id": showtime.id,
+                "date": showtime.date,
+                "time": showtime.time,
+                "hall": showtime.hall
+            },
+            "reserved_seats": seat_numbers
         }, status=status.HTTP_201_CREATED)
 
     except Guest.DoesNotExist:
