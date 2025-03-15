@@ -81,6 +81,7 @@ class Reservation(models.Model):
     guest = models.ForeignKey(Guest, related_name='guest_reservations', on_delete=models.CASCADE)
     showtime = models.ForeignKey(Showtime, related_name='reservations', on_delete=models.CASCADE)  # إضافة حقل showtime
     reservations_code = models.CharField(max_length=6, unique=True, blank=True, editable=False)
+    reserved_seats = models.JSONField(default=list)
 
     def save(self, *args, **kwargs):
         if not self.reservations_code:
