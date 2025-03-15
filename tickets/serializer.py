@@ -41,8 +41,13 @@ class ReservationSerializer(serializers.ModelSerializer):
     movie = serializers.PrimaryKeyRelatedField(queryset=Movie.objects.all())
     guest = serializers.PrimaryKeyRelatedField(queryset=Guest.objects.all())
     showtime = serializers.PrimaryKeyRelatedField(queryset=Showtime.objects.all())  # إضافة العرض
-    reserved_seats = serializers.ListField(child=serializers.CharField(), required=True)  # إرجاع المقاعد المحجوزة
+
+    reserved_seats = serializers.SerializerMethodField()  # حقل مخصص لجلب المقاعد المحجوزة
 
     class Meta:
         model = Reservation
-        fields = ['id', 'movie', 'guest', 'showtime', 'reservations_code', 'reserved_seats']
+        fields = ['id', 'movie', 'guest', 'showtime', 'reservations_code', 'reserved_seats']  # إضافة showtime
+
+    def get_reserved_seats(self, obj):
+        """إرجاع المقاعد المحجوزة من Showtime المرتبط بالحجز"""
+        return obj.showtime.reserved_seats if obj.showtime else []
