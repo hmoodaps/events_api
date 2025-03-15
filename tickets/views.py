@@ -96,7 +96,7 @@ def create_guest(request):
 
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
-@permission_classes([IsAuthenticated, CanCreateReservationPermission])
+@permission_classes([IsAuthenticated])
 def create_reservation(request):
     guest_id = request.data.get('guest_id')
     movie_id = request.data.get('movie_id')
