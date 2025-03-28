@@ -350,4 +350,4 @@ def payment_redirect(request):
         'payment_id': payment_id
     }
 
-    return render(request, 'payments/status.html', context)
+    return render(request, 'status.html', context)
