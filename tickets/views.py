@@ -309,22 +309,39 @@ def payment_status(request, payment_id):
 
 @csrf_exempt
 def payment_redirect(request):
-    # بيانات الدفع من Mollie (تأتي كـ GET أو POST)
-    payment_id = request.GET.get('id') or request.POST.get('id')
-    status = request.GET.get('status') or request.POST.get('status')
+    payment_id = request.GET.get('id', '') or request.POST.get('id', '')
+    status = request.GET.get('status', 'pending').lower()
 
-    # روابط التطبيق (استبدلها بقيمك)
-    app_scheme = 'yourapp://payment'  # Scheme للتطبيق
-    play_store_url = 'https://play.google.com/store/apps/details?id=com.yourapp'
-    app_store_url = 'https://apps.apple.com/app/id123456789'
-
-    context = {
-        'payment_id': payment_id,
-        'status': status,
-        'app_scheme': f"{app_scheme}?id={payment_id}&status={status}",
-        'play_store_url': play_store_url,
-        'app_store_url': app_store_url,
-        'desktop_fallback': 'https://yourwebsite.com/thank-you'
+    status_config = {
+        'paid': {
+            'title': 'تم الدفع بنجاح! 🎉',
+            'icon_color': '#4CAF50',
+            'message': 'شكراً لثقتك! ستصلك تفاصيل الطلب خلال دقائق.',
+            'animation': 'success'
+        },
+        'failed': {
+            'title': 'تعذر إتمام الدفع ❌',
+            'icon_color': '#f44336',
+            'message': 'حدث خطأ أثناء المعالجة. يرجى المحاولة مرة أخرى.',
+            'animation': 'error'
+        }
     }
 
-    return render(request, 'payments/redirect.html', context)
+    config = status_config.get(status, {
+        'title': 'جاري المعالجة... ⏳',
+        'icon_color': '#FFC107',
+        'message': 'نحن نعالج طلبك، يرجى الانتظار لحظة.',
+        'animation': 'processing'
+    })
+
+    context = {
+        'status': status,
+        'config': config,
+        'app_scheme': f"{settings.APP_CONFIG['APP_SCHEME']}?id={payment_id}&status={status}",
+        'play_store_url': settings.APP_CONFIG.get('PLAY_STORE_URL', '#'),
+        'app_store_url': settings.APP_CONFIG.get('APP_STORE_URL', '#'),
+        'desktop_fallback': request.build_absolute_uri(settings.APP_CONFIG['FALLBACK_URL'])
+    }
+
+    return render(request, 'redirect.html', context)
+

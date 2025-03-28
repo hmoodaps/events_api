@@ -26,8 +26,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-ed&)vv$8&g2g#h+@y_hj)!!tqe$2$+4o2fxd&gpp$9_bxug_*s'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
 ALLOWED_HOSTS = ['.vercel.app', 'localhost', '127.0.0.1', '*']
 
@@ -150,7 +148,6 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles_build', 'static')
 
 MEDIA_URL = '/media/'
@@ -163,3 +160,19 @@ STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY')
 
 CORS_ALLOW_ALL_ORIGINS = True
 MOLLIE_API_KEY = os.getenv('MOLLIE_API_KEY')
+LOCALE_PATHS = [BASE_DIR / 'locale']
+# settings.py
+LANGUAGES = [
+    ('ar', 'Arabic'),
+    ('en', 'English'),
+]
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = True  # تأكد أن وضع التطوير مفعل
+
+APP_CONFIG = {
+    'APP_SCHEME': 'yourapp://dev',  # استخدم scheme خاص للتطوير
+    'PLAY_STORE_URL': '/under-construction/android',
+    'APP_STORE_URL': '/under-construction/ios',
+    'FALLBACK_URL': '/payment/status/'
+}
+
