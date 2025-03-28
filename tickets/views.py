@@ -294,21 +294,6 @@ def verify_mollie_webhook(request):
     return received_sig == calculated_sig
 
 
-
-
-@api_view(['GET'])
-def payment_status(request, payment_id):
-    try:
-        payment = MolliePayment.objects.get(mollie_id=payment_id)
-        return Response({
-            'status': payment.status,
-            'details': json.loads(payment.details)  # تحويل JSON إلى dict
-        })
-    except MolliePayment.DoesNotExist:
-        return Response({'error': 'Payment not found'}, status=404)
-
-
-# views.py
 @csrf_exempt
 def payment_redirect(request):
     payment_id = request.GET.get('id')
@@ -317,56 +302,37 @@ def payment_redirect(request):
         return render(request, 'error.html', {'message': 'معرف الدفع غير موجود'})
 
     try:
-        # 1. إنشاء عميل Mollie
         mollie_client = Client()
         mollie_client.set_api_key(settings.MOLLIE_API_KEY)
-
-        # 2. جلب أحدث بيانات الدفع مباشرة من Mollie
         payment = mollie_client.payments.get(payment_id)
 
-        # 3. تحديد التنسيقات حسب الحالة
-        status_config = {
-            'paid': {
-                'title': 'تم الدفع بنجاح! 🎉',
-                'icon_color': '#4CAF50',
-                'message': 'شكراً لدعمك، سيصلك التأكيد بالإيميل',
-            },
-            'failed': {
-                'title': 'فشل في الدفع ❌',
-                'icon_color': '#f44336',
-                'message': 'حدث خطأ، يرجى المحاولة مرة أخرى',
-            },
-            'open': {
-                'title': 'بانتظار الإتمام ⏳',
-                'icon_color': '#FFC107',
-                'message': 'يرجى إكمال عملية الدفع في النافذة المفتوحة',
-            }
-        }
-
-        # 4. إعداد بيانات القالب
         context = {
             'status': payment.status,
-            'config': status_config.get(payment.status, {
-                'title': 'حالة غير معروفة',
-                'icon_color': '#9E9E9E',
-                'message': 'جاري التحقق من حالة الدفع...',
-            }),
             'payment_id': payment_id,
-            'checkout_url': payment.checkout_url  # لإعادة التوجيه إذا لزم
+            'payment_data': dict(payment)  # كل بيانات الدفع
         }
-
         return render(request, 'status.html', context)
 
     except Exception as e:
         return render(request, 'error.html', {'message': f'خطأ تقني: {str(e)}'})
 
-# views.py
+
 @api_view(['GET'])
-def payment_status_api(request, payment_id):
+def payment_status_api(request):
+    payment_id = request.GET.get('payment_id')
+
+    if not payment_id:
+        return Response({'error': 'معرف الدفع مطلوب'}, status=400)
+
     try:
         mollie_client = Client()
         mollie_client.set_api_key(settings.MOLLIE_API_KEY)
         payment = mollie_client.payments.get(payment_id)
-        return Response({'status': payment.status})
+
+        return Response({
+            'status': payment.status,
+            'checkout_url': payment.checkout_url if payment.status == 'open' else None
+        })
+
     except Exception as e:
         return Response({'error': str(e)}, status=400)
