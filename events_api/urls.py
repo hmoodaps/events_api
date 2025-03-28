@@ -45,8 +45,7 @@ path('get-reservation/', views.get_reservation_by_code, name='get-reservation'),
     path('payments/webhook/', mollie_webhook, name='mollie-webhook'),
 
     # التحقق من حالة الدفع (للتطبيق)
-    path('payments/status/<str:payment_id>/', payment_status, name='payment-status'),
-    path('payment/redirect/', payment_redirect, name='payment-redirect'),
+    path('payment/status/', payment_redirect, name='payment-status'),
 
 ]
 

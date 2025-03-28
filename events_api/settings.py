@@ -173,6 +173,6 @@ APP_CONFIG = {
     'APP_SCHEME': 'yourapp://dev',  # استخدم scheme خاص للتطوير
     'PLAY_STORE_URL': '/under-construction/android',
     'APP_STORE_URL': '/under-construction/ios',
-    'FALLBACK_URL': '/payment/status/'
+    'FALLBACK_URL': 'https://eventapi-teal.vercel.app/payment/status/'
 }
 

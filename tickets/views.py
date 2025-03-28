@@ -230,31 +230,63 @@ class ReservationViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
 
+# views.py
 @api_view(['POST'])
 def create_mollie_payment(request):
     mollie_client = Client()
     mollie_client.set_api_key(settings.MOLLIE_API_KEY)
 
-    payment = mollie_client.payments.create({
-        'amount': {
-            'currency': 'EUR',
-            'value': f"{request.data['amount']:.2f}"
-        },
-        'description': request.data.get('description', ''),
-        'redirectUrl': request.data.get('redirectUrl', ''),
-        'webhookUrl': request.data.get('webhookUrl', ''),
-        'metadata': request.data.get('metadata', {})
-    })
+    try:
+        payment = mollie_client.payments.create({
+            'amount': {
+                'currency': 'EUR',
+                'value': f"{request.data['amount']:.2f}"
+            },
+            'description': request.data.get('description', ''),
+            'redirectUrl': request.data['redirectUrl'],
+            'webhookUrl': request.data['webhookUrl'],
+            'metadata': request.data.get('metadata', {})
+        })
 
-    MolliePayment.objects.create(
-        mollie_id=payment.id,
-        amount=request.data['amount'],
-        status=payment.status,
-        details=json.dumps(payment)  # ⭐ حفظ كل التفاصيل كـ JSON
-    )
+        # حفظ بيانات الدفع
+        MolliePayment.objects.create(
+            mollie_id=payment.id,
+            amount=request.data['amount'],
+            status=payment.status,
+            details=dict(payment)
+        )
 
-    return Response(payment)  # ⚡ يعيد كل البيانات كما هي من Mollie
+        return Response({
+            'checkout_url': payment.checkout_url
+        }, status=201)
 
+    except Exception as e:
+        return Response({'error': str(e)}, status=400)
+
+
+@csrf_exempt
+@api_view(['POST'])
+def mollie_webhook(request):
+    if not verify_mollie_webhook(request):
+        return HttpResponse('Invalid signature', status=403)
+
+    try:
+        payment_id = request.data.get('id')
+        mollie_client = Client()
+        mollie_client.set_api_key(settings.MOLLIE_API_KEY)
+
+        payment = mollie_client.payments.get(payment_id)
+
+        # تحديث حالة الدفع
+        db_payment = MolliePayment.objects.get(mollie_id=payment_id)
+        db_payment.status = payment.status
+        db_payment.details = dict(payment)
+        db_payment.save()
+
+        return HttpResponse(status=200)
+
+    except Exception as e:
+        return HttpResponse(str(e), status=400)
 
 
 
@@ -270,30 +302,6 @@ def verify_mollie_webhook(request):
 
 
 
-@csrf_exempt
-@api_view(['POST'])
-def mollie_webhook(request):
-    if not verify_mollie_webhook(request):
-        return HttpResponse('Invalid signature', status=403)
-    try:
-        payment_id = request.data.get('id')
-        mollie_client = Client()
-        mollie_client.set_api_key(settings.MOLLIE_API_KEY)
-
-        # جلب أحدث حالة للدفع من Mollie مباشرة
-        payment = mollie_client.payments.get(payment_id)
-
-        # تحديث قاعدة البيانات
-        db_payment = MolliePayment.objects.get(mollie_id=payment_id)
-        db_payment.status = payment.status
-        db_payment.details = json.dumps(payment)
-        db_payment.save()
-
-        return HttpResponse(status=200)  # ⚠️ يجب إرجاع 200 لإعلام Mollie أن الاستلام كان ناجحًا
-
-    except Exception as e:
-        return HttpResponse(str(e), status=400)
-
 
 @api_view(['GET'])
 def payment_status(request, payment_id):
@@ -307,41 +315,39 @@ def payment_status(request, payment_id):
         return Response({'error': 'Payment not found'}, status=404)
 
 
+# views.py
 @csrf_exempt
 def payment_redirect(request):
-    payment_id = request.GET.get('id', '') or request.POST.get('id', '')
+    payment_id = request.GET.get('id')
     status = request.GET.get('status', 'pending').lower()
 
+    # التنسيقات المرئية
     status_config = {
         'paid': {
             'title': 'تم الدفع بنجاح! 🎉',
             'icon_color': '#4CAF50',
-            'message': 'شكراً لثقتك! ستصلك تفاصيل الطلب خلال دقائق.',
-            'animation': 'success'
+            'message': 'شكراً لدعمك! سيصلك إشعار بالتأكيد.',
         },
         'failed': {
-            'title': 'تعذر إتمام الدفع ❌',
+            'title': 'فشل في الدفع ❌',
             'icon_color': '#f44336',
-            'message': 'حدث خطأ أثناء المعالجة. يرجى المحاولة مرة أخرى.',
-            'animation': 'error'
+            'message': 'حدث خطأ أثناء المعالجة. يرجى المحاولة لاحقاً.',
+        },
+        'open': {
+            'title': 'بانتظار الدفع ⏳',
+            'icon_color': '#FFC107',
+            'message': 'يرجى إتمام عملية الدفع في الصفحة المفتوحة.',
         }
     }
 
-    config = status_config.get(status, {
-        'title': 'جاري المعالجة... ⏳',
-        'icon_color': '#FFC107',
-        'message': 'نحن نعالج طلبك، يرجى الانتظار لحظة.',
-        'animation': 'processing'
-    })
-
     context = {
         'status': status,
-        'config': config,
-        'app_scheme': f"{settings.APP_CONFIG['APP_SCHEME']}?id={payment_id}&status={status}",
-        'play_store_url': settings.APP_CONFIG.get('PLAY_STORE_URL', '#'),
-        'app_store_url': settings.APP_CONFIG.get('APP_STORE_URL', '#'),
-        'desktop_fallback': request.build_absolute_uri(settings.APP_CONFIG['FALLBACK_URL'])
+        'config': status_config.get(status, {
+            'title': 'حالة غير معروفة',
+            'icon_color': '#9E9E9E',
+            'message': 'حدثت مشكلة في تحديد حالة الدفع.',
+        }),
+        'payment_id': payment_id
     }
 
-    return render(request, 'redirect.html', context)
-
+    return render(request, 'payments/status.html', context)

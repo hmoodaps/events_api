@@ -96,9 +96,13 @@ class Reservation(models.Model):
     def __str__(self):
         return f"Reservation {self.reservations_code} | Movie: {self.movie.name} | Guest ID: {self.guest.id}"
 
+# models.py
 class MolliePayment(models.Model):
-    mollie_id = models.CharField(max_length=100)
+    mollie_id = models.CharField(max_length=100, unique=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    status = models.CharField(max_length=20)
+    status = models.CharField(max_length=20, default='pending')
     details = jsonfield.JSONField()
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.mollie_id} - {self.status}"

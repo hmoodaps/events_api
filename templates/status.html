@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ config.title }}</title>
+    <style>
+        .status-box {
+            background: {{ config.icon_color }}22;
+            border: 2px solid {{ config.icon_color }};
+            border-radius: 15px;
+            padding: 2rem;
+            max-width: 600px;
+            margin: 2rem auto;
+            text-align: center;
+        }
+        .status-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="status-box">
+        <div class="status-icon">{{ config.title }}</div>
+        <h1>{{ config.message }}</h1>
+        <p>رقم العملية: <strong>{{ payment_id }}</strong></p>
+
+        {% if status == 'paid' %}
+            <a href="/" class="home-link">العودة للصفحة الرئيسية</a>
+        {% else %}
+            <a href="/payment/retry/{{ payment_id }}" class="retry-link">إعادة المحاولة</a>
+        {% endif %}
+    </div>
+</body>
+</html>
