@@ -228,6 +228,24 @@
             </div>
         </div>
     </div>
+<!-- في نهاية ملف status.html -->
+{% if status == 'open' %}
+<script>
+    // التحقق من الحالة كل 5 ثواني
+    function checkPaymentStatus() {
+        fetch(`/api/payment-status/{{ payment_id }}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status !== 'open') {
+                window.location.reload(); // إعادة تحميل الصفحة عند تغيير الحالة
+            }
+        });
+    }
+
+    // بدء التحديث التلقائي
+    setInterval(checkPaymentStatus, 5000);
+</script>
+{% endif %}
 
     <script>
         // تفعيل تفاعلية Lottie

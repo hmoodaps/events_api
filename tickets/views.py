@@ -312,35 +312,61 @@ def payment_status(request, payment_id):
 @csrf_exempt
 def payment_redirect(request):
     payment_id = request.GET.get('id')
-    status = request.GET.get('status', 'pending').lower()
 
-    # التنسيقات المرئية
-    status_config = {
-        'paid': {
-            'title': 'تم الدفع بنجاح! 🎉',
-            'icon_color': '#4CAF50',
-            'message': 'شكراً لدعمك! سيصلك إشعار بالتأكيد.',
-        },
-        'failed': {
-            'title': 'فشل في الدفع ❌',
-            'icon_color': '#f44336',
-            'message': 'حدث خطأ أثناء المعالجة. يرجى المحاولة لاحقاً.',
-        },
-        'open': {
-            'title': 'بانتظار الدفع ⏳',
-            'icon_color': '#FFC107',
-            'message': 'يرجى إتمام عملية الدفع في الصفحة المفتوحة.',
+    if not payment_id:
+        return render(request, 'error.html', {'message': 'معرف الدفع غير موجود'})
+
+    try:
+        # 1. إنشاء عميل Mollie
+        mollie_client = Client()
+        mollie_client.set_api_key(settings.MOLLIE_API_KEY)
+
+        # 2. جلب أحدث بيانات الدفع مباشرة من Mollie
+        payment = mollie_client.payments.get(payment_id)
+
+        # 3. تحديد التنسيقات حسب الحالة
+        status_config = {
+            'paid': {
+                'title': 'تم الدفع بنجاح! 🎉',
+                'icon_color': '#4CAF50',
+                'message': 'شكراً لدعمك، سيصلك التأكيد بالإيميل',
+            },
+            'failed': {
+                'title': 'فشل في الدفع ❌',
+                'icon_color': '#f44336',
+                'message': 'حدث خطأ، يرجى المحاولة مرة أخرى',
+            },
+            'open': {
+                'title': 'بانتظار الإتمام ⏳',
+                'icon_color': '#FFC107',
+                'message': 'يرجى إكمال عملية الدفع في النافذة المفتوحة',
+            }
         }
-    }
 
-    context = {
-        'status': status,
-        'config': status_config.get(status, {
-            'title': 'حالة غير معروفة',
-            'icon_color': '#9E9E9E',
-            'message': 'حدثت مشكلة في تحديد حالة الدفع.',
-        }),
-        'payment_id': payment_id
-    }
+        # 4. إعداد بيانات القالب
+        context = {
+            'status': payment.status,
+            'config': status_config.get(payment.status, {
+                'title': 'حالة غير معروفة',
+                'icon_color': '#9E9E9E',
+                'message': 'جاري التحقق من حالة الدفع...',
+            }),
+            'payment_id': payment_id,
+            'checkout_url': payment.checkout_url  # لإعادة التوجيه إذا لزم
+        }
 
-    return render(request, 'status.html', context)
+        return render(request, 'status.html', context)
+
+    except Exception as e:
+        return render(request, 'error.html', {'message': f'خطأ تقني: {str(e)}'})
+
+# views.py
+@api_view(['GET'])
+def payment_status_api(request, payment_id):
+    try:
+        mollie_client = Client()
+        mollie_client.set_api_key(settings.MOLLIE_API_KEY)
+        payment = mollie_client.payments.get(payment_id)
+        return Response({'status': payment.status})
+    except Exception as e:
+        return Response({'error': str(e)}, status=400)
