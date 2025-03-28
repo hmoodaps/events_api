@@ -244,7 +244,7 @@ def create_mollie_payment(request):
             'value': f"{request.data['amount']:.2f}"
         },
         'description': request.data.get('description', ''),
-        'redirectUrl': request.data.get('redirectUrl', ''),
+        'redirectUrl': f"https://eventapi-teal.vercel.app/payment/status/?payment_id={{payment.id}}",
         'webhookUrl': request.data.get('webhookUrl', ''),
         'metadata': request.data.get('metadata', {})
     })
@@ -256,7 +256,11 @@ def create_mollie_payment(request):
         details=json.dumps(payment)  # ⭐ حفظ كل التفاصيل كـ JSON
     )
 
-    return Response(payment)  # ⚡ يعيد كل البيانات كما هي من Mollie
+    return Response({
+        "success": True,
+        "payment_id": payment.id,
+        "checkout_url": payment.checkout_url
+    })
 
 
 def fetch_payment_status(payment_id):
