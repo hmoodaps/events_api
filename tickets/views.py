@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import json
+import logging
 
 from django.conf import settings
 from django.contrib.auth.models import Group
@@ -282,27 +283,65 @@ def payment_redirect(request):
         return render(request, 'error.html', {'message': f'خطأ تقني: {str(e)}'})
 
 
+logger = logging.getLogger(__name__)
+
+
 @api_view(['GET'])
 def payment_status(request):
+    """
+    Check the status of a Mollie payment
+    Required GET parameter: payment_id
+    Returns JSON with payment status and details
+    """
     payment_id = request.GET.get('payment_id')
 
     if not payment_id:
-        return Response({'error': 'معرف الدفع مطلوب'}, status=400)
+        return Response(
+            {'success': False,
+             'error': 'Payment ID is required',
+             'message': 'Please provide a valid payment_id parameter'},
+            status=400
+        )
 
     try:
+        # Initialize Mollie client
         mollie_client = Client()
         mollie_client.set_api_key(settings.MOLLIE_API_KEY)
+
+        # Retrieve payment from Mollie
         payment = mollie_client.payments.get(payment_id)
 
-        return Response({
+        response_data = {
+            'success': True,
+            'payment_id': payment_id,
             'status': payment.status,
-            'checkout_url': payment.checkout_url if payment.status == 'open' else None,
-            'payment_id': payment_id
-        })
+            'details': {
+                'amount': payment.amount,
+                'description': payment.description,
+                'created_at': payment.created_at,
+                'method': payment.method,
+            }
+        }
+
+        # Only include checkout URL if payment is still open
+        if payment.status == 'open':
+            response_data['checkout_url'] = payment.checkout_url
+
+        return Response(response_data)
 
     except Exception as e:
-        return Response({'error': str(e)}, status=400)
+        logger.error(f"Error checking payment status for {payment_id}: {str(e)}")
 
+        return Response(
+            {
+                'success': False,
+                'error': 'payment_retrieval_failed',
+                'payment_id': payment_id,
+                'message': f"Could not retrieve payment status: {str(e)}",
+                'developer_message': "Ensure the payment ID is correct and API key is valid"
+            },
+            status=400
+        )
 
 #
 # @csrf_exempt
