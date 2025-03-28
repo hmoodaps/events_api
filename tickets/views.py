@@ -238,22 +238,21 @@ def create_mollie_payment(request):
     mollie_client = Client()
     mollie_client.set_api_key(settings.MOLLIE_API_KEY)
 
+    # إنشاء الدفع وإرسال placeholder في redirectUrl
     payment_data = {
         'amount': {
             'currency': 'EUR',
             'value': f"{request.data['amount']:.2f}"
         },
         'description': request.data.get('description', ''),
+        'redirectUrl': "https://eventapi-teal.vercel.app/payment/status/?payment_id={{payment_id}}",
         'webhookUrl': request.data.get('webhookUrl', ''),
         'metadata': request.data.get('metadata', {})
     }
 
-    payment = mollie_client.payments.create(payment_data)
+    payment = mollie_client.payments.create(payment_data)  # ⬅️ ننشئ الدفع
 
-    # تحديث redirectUrl بعد إنشاء الدفع
-    payment_data['redirectUrl'] = f"https://eventapi-teal.vercel.app/payment/status/?payment_id={payment.id}"
-    payment.update(payment_data)
-
+    # حفظ الدفع في قاعدة البيانات
     MolliePayment.objects.create(
         mollie_id=payment.id,
         amount=request.data['amount'],
