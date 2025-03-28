@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'tickets',
     'rest_framework',
     'rest_framework.authtoken',
+    'corsheaders',
 
 ]
 
@@ -64,6 +65,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+
 ]
 
 ROOT_URLCONF = 'events_api.urls'
@@ -156,3 +159,7 @@ load_dotenv()
 
 STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
 STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY')
+
+
+CORS_ALLOW_ALL_ORIGINS = True
+MOLLIE_API_KEY = os.getenv('MOLLIE_API_KEY')

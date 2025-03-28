@@ -1,5 +1,12 @@
+import hashlib
+import hmac
+import json
+
 from django.conf import settings
 from django.contrib.auth.models import Group
+from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from mollie.api.client import Client
 from rest_framework import status
 from rest_framework import viewsets, filters
 from rest_framework.authentication import TokenAuthentication
@@ -11,7 +18,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Guest, Movie, generate_reservation_code
+from .models import Guest, Movie, generate_reservation_code, MolliePayment
 from .models import Reservation, Showtime
 from .serializer import ReservationSerializer, MovieSerializer, GuestSerializer
 
@@ -220,3 +227,80 @@ class ReservationViewSet(viewsets.ModelViewSet):
     serializer_class = ReservationSerializer
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
+
+
+@api_view(['POST'])
+def create_mollie_payment(request):
+    mollie_client = Client()
+    mollie_client.set_api_key(settings.MOLLIE_API_KEY)
+
+    payment = mollie_client.payments.create({
+        'amount': {
+            'currency': 'EUR',
+            'value': f"{request.data['amount']:.2f}"
+        },
+        'description': request.data.get('description', ''),
+        'redirectUrl': request.data.get('redirectUrl', ''),
+        'webhookUrl': request.data.get('webhookUrl', ''),
+        'metadata': request.data.get('metadata', {})
+    })
+
+    MolliePayment.objects.create(
+        mollie_id=payment.id,
+        amount=request.data['amount'],
+        status=payment.status,
+        details=json.dumps(payment)  # ⭐ حفظ كل التفاصيل كـ JSON
+    )
+
+    return Response(payment)  # ⚡ يعيد كل البيانات كما هي من Mollie
+
+
+
+
+def verify_mollie_webhook(request):
+    webhook_secret = settings.MOLLIE_WEBHOOK_SECRET  # ⚠️ احفظه في settings.py
+    received_sig = request.headers.get('Mollie-Signature')
+    calculated_sig = hmac.new(
+        webhook_secret.encode(),
+        request.body,
+        hashlib.sha256
+    ).hexdigest()
+    return received_sig == calculated_sig
+
+
+
+@csrf_exempt
+@api_view(['POST'])
+def mollie_webhook(request):
+    if not verify_mollie_webhook(request):
+        return HttpResponse('Invalid signature', status=403)
+    try:
+        payment_id = request.data.get('id')
+        mollie_client = Client()
+        mollie_client.set_api_key(settings.MOLLIE_API_KEY)
+
+        # جلب أحدث حالة للدفع من Mollie مباشرة
+        payment = mollie_client.payments.get(payment_id)
+
+        # تحديث قاعدة البيانات
+        db_payment = MolliePayment.objects.get(mollie_id=payment_id)
+        db_payment.status = payment.status
+        db_payment.details = json.dumps(payment)
+        db_payment.save()
+
+        return HttpResponse(status=200)  # ⚠️ يجب إرجاع 200 لإعلام Mollie أن الاستلام كان ناجحًا
+
+    except Exception as e:
+        return HttpResponse(str(e), status=400)
+
+
+@api_view(['GET'])
+def payment_status(request, payment_id):
+    try:
+        payment = MolliePayment.objects.get(mollie_id=payment_id)
+        return Response({
+            'status': payment.status,
+            'details': json.loads(payment.details)  # تحويل JSON إلى dict
+        })
+    except MolliePayment.DoesNotExist:
+        return Response({'error': 'Payment not found'}, status=404)

@@ -1,3 +1,4 @@
+import jsonfield
 from django.contrib.auth.models import Group
 from django.db import models
 import random
@@ -94,3 +95,10 @@ class Reservation(models.Model):
 
     def __str__(self):
         return f"Reservation {self.reservations_code} | Movie: {self.movie.name} | Guest ID: {self.guest.id}"
+
+class MolliePayment(models.Model):
+    mollie_id = models.CharField(max_length=100)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=20)
+    details = jsonfield.JSONField()
+    created_at = models.DateTimeField(auto_now_add=True)

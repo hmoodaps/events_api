@@ -4,6 +4,7 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework import routers
 from tickets import views
+from tickets.views import create_mollie_payment, mollie_webhook, payment_status
 
 # تعريف الـ Router لتسجيل viewsets
 router = routers.DefaultRouter()
@@ -36,6 +37,15 @@ urlpatterns = [
     # رابط لحذف الحجز باستخدام رمز الحجز
     path('delete-reservation/', views.delete_reservation, name='delete-reservation'),
 path('get-reservation/', views.get_reservation_by_code, name='get-reservation'),
+
+    # الدفع
+    path('api/payments/create/', create_mollie_payment, name='create-payment'),
+
+    # Webhook (يجب أن يكون هذا الرابط عامًا ويتقبل POST فقط)
+    path('api/payments/webhook/', mollie_webhook, name='mollie-webhook'),
+
+    # التحقق من حالة الدفع (للتطبيق)
+    path('api/payments/status/<str:payment_id>/', payment_status, name='payment-status'),
 
 ]
 
