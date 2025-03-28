@@ -4,33 +4,244 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ config.title }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+    <script src="https://unpkg.com/@lottiefiles/lottie-interactivity@latest/dist/lottie-interactivity.min.js"></script>
     <style>
-        .status-box {
-            background: {{ config.icon_color }}22;
-            border: 2px solid {{ config.icon_color }};
-            border-radius: 15px;
-            padding: 2rem;
-            max-width: 600px;
-            margin: 2rem auto;
-            text-align: center;
+        :root {
+            --main-color: {{ config.icon_color }};
+            --gradient: linear-gradient(45deg, var(--main-color), #ffffff);
         }
-        .status-icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            background: var(--gradient);
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .particles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        .hero-section {
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            border-radius: 30px;
+            padding: 4rem;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+            max-width: 800px;
+            text-align: center;
+            transform: translateY(50px);
+            opacity: 0;
+            animation: cardEntrance 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            position: relative;
+            z-index: 2;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        @keyframes cardEntrance {
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .lottie-celebration {
+            width: 400px;
+            margin: -100px auto -50px;
+        }
+
+        .title {
+            color: var(--main-color);
+            font-size: 3.5rem;
+            margin: 2rem 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .message {
+            font-size: 1.5rem;
+            line-height: 1.6;
+            margin: 2rem 0;
+            color: #2c3e50;
+        }
+
+        .payment-id {
+            background: rgba(0,0,0,0.05);
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            display: inline-block;
+            font-size: 1.2rem;
+            margin: 2rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .payment-id::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            animation: shine 2s infinite;
+        }
+
+        @keyframes shine {
+            100% { left: 100%; }
+        }
+
+        .buttons-container {
+            margin-top: 3rem;
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 1.2rem 2.5rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            position: relative;
+            overflow: hidden;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: var(--main-color);
+            color: white;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.9);
+            color: var(--main-color);
+            border: 2px solid var(--main-color);
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent);
+            top: 0;
+            left: -100%;
+            transition: 0.5s;
+        }
+
+        .btn:hover::after {
+            left: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .card {
+                padding: 2rem;
+                margin: 1rem;
+            }
+
+            .lottie-celebration {
+                width: 250px;
+                margin: -50px auto -30px;
+            }
+
+            .title {
+                font-size: 2.5rem;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="status-box">
-        <div class="status-icon">{{ config.title }}</div>
-        <h1>{{ config.message }}</h1>
-        <p>رقم العملية: <strong>{{ payment_id }}</strong></p>
+    <!-- جسيمات متحركة في الخلفية -->
+    <lottie-player
+        class="particles"
+        src="https://assets9.lottiefiles.com/packages/lf20_u25cckyh.json"
+        background="transparent"
+        speed="0.5"
+        loop
+        autoplay>
+    </lottie-player>
 
-        {% if status == 'paid' %}
-            <a href="/" class="home-link">العودة للصفحة الرئيسية</a>
-        {% else %}
-            <a href="/payment/retry/{{ payment_id }}" class="retry-link">إعادة المحاولة</a>
-        {% endif %}
+    <div class="hero-section">
+        <div class="card">
+            <!-- رسوم متحركة احتفالية -->
+            <lottie-player
+                class="lottie-celebration"
+                src="https://assets1.lottiefiles.com/packages/lf20_yo9mni.json"
+                background="transparent"
+                speed="1"
+                loop
+                autoplay>
+            </lottie-player>
+
+            <h1 class="title">{{ config.title }}</h1>
+
+            <p class="message">{{ config.message }}</p>
+
+            <div class="payment-id">
+                {{ payment_id }}
+            </div>
+
+            <div class="buttons-container">
+                {% if status == 'paid' %}
+                <a href="/" class="btn btn-primary">
+                    🏠 الصفحة الرئيسية
+                    <lottie-player
+                        src="https://assets8.lottiefiles.com/packages/lf20_80nu5g1i.json"
+                        background="transparent"
+                        speed="1"
+                        style="width: 30px; height: 30px;"
+                        hover>
+                    </lottie-player>
+                </a>
+                {% else %}
+                <a href="/payment/retry/{{ payment_id }}" class="btn btn-secondary">
+                    🔄 إعادة المحاولة
+                    <lottie-player
+                        src="https://assets2.lottiefiles.com/packages/lf20_gs3iplgj.json"
+                        background="transparent"
+                        speed="1"
+                        style="width: 30px; height: 30px;"
+                        hover>
+                    </lottie-player>
+                </a>
+                {% endif %}
+            </div>
+        </div>
     </div>
+
+    <script>
+        // تفعيل تفاعلية Lottie
+        LottieInteractivity.create({
+            player: "#confetti",
+            mode: "scroll",
+            actions: [
+                {
+                    visibility: [0, 1],
+                    type: "seek",
+                    frames: [0, 300]
+                }
+            ]
+        });
+    </script>
 </body>
 </html>

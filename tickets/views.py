@@ -236,32 +236,25 @@ def create_mollie_payment(request):
     mollie_client = Client()
     mollie_client.set_api_key(settings.MOLLIE_API_KEY)
 
-    try:
-        payment = mollie_client.payments.create({
-            'amount': {
-                'currency': 'EUR',
-                'value': f"{request.data['amount']:.2f}"
-            },
-            'description': request.data.get('description', ''),
-            'redirectUrl': request.data['redirectUrl'],
-            'webhookUrl': request.data['webhookUrl'],
-            'metadata': request.data.get('metadata', {})
-        })
+    payment = mollie_client.payments.create({
+        'amount': {
+            'currency': 'EUR',
+            'value': f"{request.data['amount']:.2f}"
+        },
+        'description': request.data.get('description', ''),
+        'redirectUrl': request.data.get('redirectUrl', ''),
+        'webhookUrl': request.data.get('webhookUrl', ''),
+        'metadata': request.data.get('metadata', {})
+    })
 
-        # حفظ بيانات الدفع
-        MolliePayment.objects.create(
-            mollie_id=payment.id,
-            amount=request.data['amount'],
-            status=payment.status,
-            details=dict(payment)
-        )
+    MolliePayment.objects.create(
+        mollie_id=payment.id,
+        amount=request.data['amount'],
+        status=payment.status,
+        details=json.dumps(payment)  # ⭐ حفظ كل التفاصيل كـ JSON
+    )
 
-        return Response({
-            'checkout_url': payment.checkout_url
-        }, status=201)
-
-    except Exception as e:
-        return Response({'error': str(e)}, status=400)
+    return Response(payment)  # ⚡ يعيد كل البيانات كما هي من Mollie
 
 
 @csrf_exempt
