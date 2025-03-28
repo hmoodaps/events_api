@@ -257,41 +257,6 @@ def create_mollie_payment(request):
     return Response(payment)  # ⚡ يعيد كل البيانات كما هي من Mollie
 
 
-@csrf_exempt
-@api_view(['POST'])
-def mollie_webhook(request):
-    if not verify_mollie_webhook(request):
-        return HttpResponse('Invalid signature', status=403)
-
-    try:
-        payment_id = request.data.get('id')
-        mollie_client = Client()
-        mollie_client.set_api_key(settings.MOLLIE_API_KEY)
-
-        payment = mollie_client.payments.get(payment_id)
-
-        # تحديث حالة الدفع
-        db_payment = MolliePayment.objects.get(mollie_id=payment_id)
-        db_payment.status = payment.status
-        db_payment.details = dict(payment)
-        db_payment.save()
-
-        return HttpResponse(status=200)
-
-    except Exception as e:
-        return HttpResponse(str(e), status=400)
-
-
-
-def verify_mollie_webhook(request):
-    webhook_secret = settings.MOLLIE_WEBHOOK_SECRET  # ⚠️ احفظه في settings.py
-    received_sig = request.headers.get('Mollie-Signature')
-    calculated_sig = hmac.new(
-        webhook_secret.encode(),
-        request.body,
-        hashlib.sha256
-    ).hexdigest()
-    return received_sig == calculated_sig
 
 
 @csrf_exempt
@@ -318,7 +283,7 @@ def payment_redirect(request):
 
 
 @api_view(['GET'])
-def payment_status_api(request):
+def payment_status(request):
     payment_id = request.GET.get('payment_id')
 
     if not payment_id:
@@ -331,8 +296,47 @@ def payment_status_api(request):
 
         return Response({
             'status': payment.status,
-            'checkout_url': payment.checkout_url if payment.status == 'open' else None
+            'checkout_url': payment.checkout_url if payment.status == 'open' else None,
+            'payment_id': payment_id
         })
 
     except Exception as e:
         return Response({'error': str(e)}, status=400)
+
+
+#
+# @csrf_exempt
+# @api_view(['POST'])
+# def mollie_webhook(request):
+#     if not verify_mollie_webhook(request):
+#         return HttpResponse('Invalid signature', status=403)
+#
+#     try:
+#         payment_id = request.data.get('id')
+#         mollie_client = Client()
+#         mollie_client.set_api_key(settings.MOLLIE_API_KEY)
+#
+#         payment = mollie_client.payments.get(payment_id)
+#
+#         # تحديث حالة الدفع
+#         db_payment = MolliePayment.objects.get(mollie_id=payment_id)
+#         db_payment.status = payment.status
+#         db_payment.details = dict(payment)
+#         db_payment.save()
+#
+#         return HttpResponse(status=200)
+#
+#     except Exception as e:
+#         return HttpResponse(str(e), status=400)
+#
+#
+#
+# def verify_mollie_webhook(request):
+#     webhook_secret = settings.MOLLIE_WEBHOOK_SECRET  # ⚠️ احفظه في settings.py
+#     received_sig = request.headers.get('Mollie-Signature')
+#     calculated_sig = hmac.new(
+#         webhook_secret.encode(),
+#         request.body,
+#         hashlib.sha256
+#     ).hexdigest()
+#     return received_sig == calculated_sig
