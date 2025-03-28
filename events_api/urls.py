@@ -39,13 +39,13 @@ urlpatterns = [
 path('get-reservation/', views.get_reservation_by_code, name='get-reservation'),
 
     # الدفع
-    path('api/payments/create/', create_mollie_payment, name='create-payment'),
+    path('payments/create/', create_mollie_payment, name='create-payment'),
 
     # Webhook (يجب أن يكون هذا الرابط عامًا ويتقبل POST فقط)
-    path('api/payments/webhook/', mollie_webhook, name='mollie-webhook'),
+    path('payments/webhook/', mollie_webhook, name='mollie-webhook'),
 
     # التحقق من حالة الدفع (للتطبيق)
-    path('api/payments/status/<str:payment_id>/', payment_status, name='payment-status'),
+    path('payments/status/<str:payment_id>/', payment_status, name='payment-status'),
 
 ]
 
