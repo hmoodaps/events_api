@@ -47,7 +47,6 @@ path('get-reservation/', views.get_reservation_by_code, name='get-reservation'),
     # التحقق من حالة الدفع (للتطبيق)
     path('payments/status/<str:payment_id>/', payment_status, name='payment-status'),
     path('payment/redirect/', payment_redirect, name='payment-redirect'),
-    path('under-construction/<str:platform>/', views.construction_view),
 
 ]
 
