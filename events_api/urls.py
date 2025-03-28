@@ -4,7 +4,7 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework import routers
 from tickets import views
-from tickets.views import create_mollie_payment, mollie_webhook, payment_status
+from tickets.views import create_mollie_payment, mollie_webhook, payment_status, payment_redirect
 
 # تعريف الـ Router لتسجيل viewsets
 router = routers.DefaultRouter()
@@ -46,6 +46,7 @@ path('get-reservation/', views.get_reservation_by_code, name='get-reservation'),
 
     # التحقق من حالة الدفع (للتطبيق)
     path('payments/status/<str:payment_id>/', payment_status, name='payment-status'),
+    path('payment/redirect/', payment_redirect, name='payment-redirect'),
 
 ]
 

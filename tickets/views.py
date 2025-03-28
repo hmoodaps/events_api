@@ -5,6 +5,7 @@ import json
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.http import HttpResponse
+from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from mollie.api.client import Client
 from rest_framework import status
@@ -304,3 +305,26 @@ def payment_status(request, payment_id):
         })
     except MolliePayment.DoesNotExist:
         return Response({'error': 'Payment not found'}, status=404)
+
+
+@csrf_exempt
+def payment_redirect(request):
+    # بيانات الدفع من Mollie (تأتي كـ GET أو POST)
+    payment_id = request.GET.get('id') or request.POST.get('id')
+    status = request.GET.get('status') or request.POST.get('status')
+
+    # روابط التطبيق (استبدلها بقيمك)
+    app_scheme = 'yourapp://payment'  # Scheme للتطبيق
+    play_store_url = 'https://play.google.com/store/apps/details?id=com.yourapp'
+    app_store_url = 'https://apps.apple.com/app/id123456789'
+
+    context = {
+        'payment_id': payment_id,
+        'status': status,
+        'app_scheme': f"{app_scheme}?id={payment_id}&status={status}",
+        'play_store_url': play_store_url,
+        'app_store_url': app_store_url,
+        'desktop_fallback': 'https://yourwebsite.com/thank-you'
+    }
+
+    return render(request, 'payments/redirect.html', context)
