@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حدث خطأ ❌</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+    <style>
+        :root {
+            --error-color: #ff4757;
+            --bg-gradient: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background: var(--bg-gradient);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #333;
+        }
+
+        .error-container {
+            text-align: center;
+            max-width: 600px;
+            padding: 2rem;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .error-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: var(--error-color);
+            animation: borderGrow 3s infinite;
+        }
+
+        @keyframes borderGrow {
+            0% { width: 0; }
+            50% { width: 100%; }
+            100% { width: 0; right: 0; left: auto; }
+        }
+
+        .error-animation {
+            width: 200px;
+            height: 200px;
+            margin: -50px auto -30px;
+        }
+
+        h1 {
+            color: var(--error-color);
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .error-message {
+            font-size: 1.2rem;
+            line-height: 1.6;
+            margin: 1.5rem 0;
+            padding: 0 1rem;
+        }
+
+        .error-details {
+            background: rgba(255, 71, 87, 0.1);
+            padding: 1rem;
+            border-radius: 10px;
+            margin: 1.5rem 0;
+            font-family: monospace;
+            overflow-x: auto;
+        }
+
+        .action-buttons {
+            margin-top: 2rem;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.8rem 1.5rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--error-color);
+            color: white;
+        }
+
+        .btn-secondary {
+            border: 2px solid var(--error-color);
+            color: var(--error-color);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(255, 71, 87, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .error-container {
+                margin: 1rem;
+                padding: 1.5rem;
+            }
+
+            .error-animation {
+                width: 150px;
+                height: 150px;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <lottie-player
+            class="error-animation"
+            src="https://assets1.lottiefiles.com/packages/lf20_zy9w7pjr.json"
+            background="transparent"
+            speed="1"
+            loop
+            autoplay>
+        </lottie-player>
+
+        <h1>حدث خطأ غير متوقع</h1>
+
+        <div class="error-message">
+            {% if message %}
+                {{ message }}
+            {% else %}
+                حدثت مشكلة تقنية أثناء معالجة طلبك. يرجى المحاولة مرة أخرى لاحقاً.
+            {% endif %}
+        </div>
+
+        {% if debug and error %}
+        <div class="error-details">
+            <strong>تفاصيل الخطأ:</strong><br>
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <div class="action-buttons">
+            <a href="/" class="btn btn-primary">
+                🏠 العودة للرئيسية
+            </a>
+            <a href="javascript:history.back()" class="btn btn-secondary">
+                ↩ الرجوع للصفحة السابقة
+            </a>
+        </div>
+    </div>
+</body>
+</html>
