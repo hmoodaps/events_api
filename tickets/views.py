@@ -227,24 +227,25 @@ class ReservationViewSet(viewsets.ModelViewSet):
 
 
 # views.py
+# views.py (Django)
 @api_view(['POST'])
 def create_mollie_payment(request):
     mollie_client = Client()
     mollie_client.set_api_key(settings.MOLLIE_API_KEY)
 
-    payment_data = {
+    # إنشاء الدفع أولاً
+    payment = mollie_client.payments.create({
         'amount': {
             'currency': 'EUR',
             'value': f"{request.data['amount']:.2f}"
         },
         'description': request.data.get('description', ''),
-        'redirectUrl': f"mollie://payment-return?payment_id={{payment.id}}&status={{payment.status}}",
+        'redirectUrl': 'mollie://payment-return', # فقط الرابط الأساسي بدون بارامترات
         'webhookUrl': request.data.get('webhookUrl', ''),
         'metadata': request.data.get('metadata', {})
-    }
+    })
 
-    payment = mollie_client.payments.create(payment_data)
-
+    # حفظ بيانات الدفع (اختياري)
     MolliePayment.objects.create(
         mollie_id=payment.id,
         amount=request.data['amount'],
@@ -252,7 +253,8 @@ def create_mollie_payment(request):
         details=json.dumps(payment)
     )
 
-    return Response(payment)
+    return Response({'checkout_url': payment.checkout_url})
+
 
 logger = logging.getLogger(__name__)
 
