@@ -253,7 +253,7 @@ def create_mollie_payment(request):
         details=json.dumps(payment)
     )
 
-    return Response()
+    return Response(payment)
 
 
 logger = logging.getLogger(__name__)
