@@ -1,14 +1,8 @@
-import hashlib
-import hmac
 import json
 import logging
 
-import requests
 from django.conf import settings
 from django.contrib.auth.models import Group
-from django.http import HttpResponse
-from django.shortcuts import render
-from django.views.decorators.csrf import csrf_exempt
 from mollie.api.client import Client
 from rest_framework import status
 from rest_framework import viewsets, filters
@@ -238,14 +232,13 @@ def create_mollie_payment(request):
     mollie_client = Client()
     mollie_client.set_api_key(settings.MOLLIE_API_KEY)
 
-    # إنشاء الدفع وإرسال placeholder في redirectUrl
     payment_data = {
         'amount': {
             'currency': 'EUR',
             'value': f"{request.data['amount']:.2f}"
         },
         'description': request.data.get('description', ''),
-        'redirectUrl': "https://eventapi-teal.vercel.app/payment/status/?payment_id={{payment_id}}",
+        'redirectUrl': "mollie://payment-return",
         'webhookUrl': request.data.get('webhookUrl', ''),
         'metadata': request.data.get('metadata', {})
     }
@@ -261,45 +254,6 @@ def create_mollie_payment(request):
     )
 
     return Response(payment)  # ⚡ يرجع كل البيانات كما هي من Mollie
-
-
-def fetch_payment_status(payment_id):
-    url = f"https://eventapi-teal.vercel.app/api/payment/status/?payment_id={payment_id}"
-    try:
-        response = requests.get(url)
-        if response.status_code == 200:
-            return response.json()
-        else:
-            return None
-    except requests.RequestException:
-        return None
-
-
-@csrf_exempt
-def payment_redirect(request):
-    payment_id = request.GET.get('id')
-
-    if not payment_id:
-        return render(request, 'error.html', {'message': 'معرف الدفع غير موجود'})
-
-    payment_data = fetch_payment_status(payment_id)
-
-    if not payment_data or not payment_data.get("success"):
-        return render(request, 'error.html', {'message': 'فشل في جلب بيانات الدفع'})
-
-    context = {
-        'status': payment_data['status'],
-        'payment_id': payment_id,
-        'payment_data': payment_data,
-        'config': {
-            'title': 'حالة الدفع',
-            'message': 'تمت معالجة الدفع بنجاح' if payment_data['status'] == 'paid' else 'الدفع لم يكتمل بعد',
-            'icon_color': '#28a745' if payment_data['status'] == 'paid' else '#ffc107'
-        }
-    }
-
-    return render(request, 'status.html', context)
-
 
 logger = logging.getLogger(__name__)
 
