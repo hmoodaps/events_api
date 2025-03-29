@@ -4,7 +4,7 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework import routers
 from tickets import views
-from tickets.views import create_mollie_payment, payment_redirect, payment_status
+from tickets.views import create_mollie_payment, payment_status
 
 # تعريف الـ Router لتسجيل viewsets
 router = routers.DefaultRouter()
@@ -42,10 +42,8 @@ path('get-reservation/', views.get_reservation_by_code, name='get-reservation'),
     path('payments/create/', create_mollie_payment, name='create-payment'),
 
 
-    path('payment/status/', payment_redirect, name='payment-status'),
-
     # API للتحقق من الحالة (للتحديث التلقائي)
-    path('api/payment/status/', payment_status, name='payment-status-api'),
+    path('payment/status/', payment_status, name='payment-status-api'),
 
 ]
 
