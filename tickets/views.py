@@ -253,7 +253,7 @@ def create_mollie_payment(request):
         details=json.dumps(payment)
     )
 
-    return Response({'checkout_url': payment.checkout_url})
+    return Response()
 
 
 logger = logging.getLogger(__name__)
