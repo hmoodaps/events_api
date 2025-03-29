@@ -1,8 +1,11 @@
 import json
 import logging
 
+import stripe
 from django.conf import settings
 from django.contrib.auth.models import Group
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 from mollie.api.client import Client
 from rest_framework import status
 from rest_framework import viewsets, filters
@@ -14,7 +17,9 @@ from rest_framework.decorators import authentication_classes, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from stripe.climate import Order
 
+from events_api.settings import STRIPE_WEBHOOK
 from .models import Guest, Movie, generate_reservation_code, MolliePayment
 from .models import Reservation, Showtime
 from .serializer import ReservationSerializer, MovieSerializer, GuestSerializer
@@ -185,17 +190,7 @@ def get_movies(request):
     serializer = MovieSerializer(movies, many=True)  # استخدام السيريالايزر مباشرة
     return Response(serializer.data, status=status.HTTP_200_OK)
 
-#
-# @api_view(['POST'])
-# def create_movie(request):
-#     """إضافة فيلم جديد مع أوقات العرض"""
-#     serializer = MovieSerializer(data=request.data, context={'request': request})
-#
-#     if serializer.is_valid():
-#         serializer.save()
-#         return Response(serializer.data, status=status.HTTP_201_CREATED)
-#
-#     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class GuestViewSet(viewsets.ModelViewSet):
@@ -240,7 +235,7 @@ def create_mollie_payment(request):
             'value': f"{request.data['amount']:.2f}"
         },
         'description': request.data.get('description', ''),
-        'redirectUrl': 'mollie://payment-return', # فقط الرابط الأساسي بدون بارامترات
+        'redirectUrl': 'mollie://payment-return',
         'webhookUrl': request.data.get('webhookUrl', ''),
         'metadata': request.data.get('metadata', {})
     })
@@ -316,39 +311,108 @@ def payment_status(request):
             status=400
         )
 
-#
-# @csrf_exempt
-# @api_view(['POST'])
-# def mollie_webhook(request):
-#     if not verify_mollie_webhook(request):
-#         return HttpResponse('Invalid signature', status=403)
-#
-#     try:
-#         payment_id = request.data.get('id')
-#         mollie_client = Client()
-#         mollie_client.set_api_key(settings.MOLLIE_API_KEY)
-#
-#         payment = mollie_client.payments.get(payment_id)
-#
-#         # تحديث حالة الدفع
-#         db_payment = MolliePayment.objects.get(mollie_id=payment_id)
-#         db_payment.status = payment.status
-#         db_payment.details = dict(payment)
-#         db_payment.save()
-#
-#         return HttpResponse(status=200)
-#
-#     except Exception as e:
-#         return HttpResponse(str(e), status=400)
-#
-#
-#
-# def verify_mollie_webhook(request):
-#     webhook_secret = settings.MOLLIE_WEBHOOK_SECRET  # ⚠️ احفظه في settings.py
-#     received_sig = request.headers.get('Mollie-Signature')
-#     calculated_sig = hmac.new(
-#         webhook_secret.encode(),
-#         request.body,
-#         hashlib.sha256
-#     ).hexdigest()
-#     return received_sig == calculated_sig
+
+
+
+
+@api_view(['POST'])
+def create_stripe_payment_intent(request):
+    try:
+        # Validate input values
+        amount = request.data.get('amount')
+        currency = request.data.get('currency', 'eur').lower()
+
+        if not amount:
+            return Response({'error': 'Amount is required'}, status=400)
+
+        try:
+            amount = int(amount)
+            if amount <= 0:
+                return Response({'error': 'Amount must be greater than 0'}, status=400)
+        except ValueError:
+            return Response({'error': 'Amount must be a valid integer'}, status=400)
+
+        if not isinstance(currency, str) or len(currency) != 3:
+            return Response({'error': 'Currency must be a 3-letter code'}, status=400)
+
+        # Create Payment Intent
+        intent = stripe.PaymentIntent.create(
+            amount=amount,
+            currency=currency,
+            automatic_payment_methods={'enabled': True},
+        )
+
+        return Response(intent)
+
+    except stripe.error.CardError as e:
+        return Response({'error': f'Card error: {e.user_message}'}, status=400)
+
+    except stripe.error.RateLimitError:
+        return Response({'error': 'Too many requests sent too quickly. Please try again later.'}, status=429)
+
+    except stripe.error.InvalidRequestError as e:
+        return Response({'error': f'Invalid request: {e.user_message}'}, status=400)
+
+    except stripe.error.AuthenticationError:
+        return Response({'error': 'Authentication with Stripe failed. Check your API key.'}, status=401)
+
+    except stripe.error.APIConnectionError:
+        return Response({'error': 'Unable to connect to Stripe. Please check your internet connection.'}, status=503)
+
+    except stripe.error.StripeError as e:
+        return Response({'error': f'General Stripe error: {e.user_message}'}, status=500)
+
+    except Exception as e:
+        return Response({'error': f'An unexpected error occurred: {str(e)}'}, status=500)
+
+
+@api_view(['GET'])
+def get_stripe_payment_status(request, payment_intent_id):
+    try:
+        # Retrieve payment data from Stripe
+        intent = stripe.PaymentIntent.retrieve(payment_intent_id)
+
+        return Response(intent)
+
+    except stripe.error.InvalidRequestError:
+        return Response({'error': 'Invalid Payment Intent ID'}, status=400)
+
+    except stripe.error.AuthenticationError:
+        return Response({'error': 'Authentication with Stripe failed. Check your API key.'}, status=401)
+
+    except stripe.error.APIConnectionError:
+        return Response({'error': 'Unable to connect to Stripe. Please check your internet connection.'}, status=503)
+
+    except stripe.error.StripeError as e:
+        return Response({'error': f'General Stripe error: {e.user_message}'}, status=500)
+
+    except Exception as e:
+        return Response({'error': f'An unexpected error occurred: {str(e)}'}, status=500)
+
+
+@csrf_exempt
+def stripe_webhook(request):
+    payload = request.body
+    sig_header = request.META.get("HTTP_STRIPE_SIGNATURE", "")
+    endpoint_secret = STRIPE_WEBHOOK
+
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, endpoint_secret
+        )
+    except ValueError:
+        return JsonResponse({'error': 'Invalid payload'}, status=400)
+    except stripe.error.SignatureVerificationError:
+        return JsonResponse({'error': 'Invalid signature'}, status=400)
+
+    # 🔥 استمع فقط لـ payment_intent.succeeded
+    if event['type'] == 'payment_intent.succeeded':
+        payment_intent = event['data']['object']
+        print(f"✅ Payment confirmed! ID: {payment_intent['id']}")
+
+        # يمكنك هنا تحديث الطلب في قاعدة البيانات أو إرسال إشعار للمستخدم
+        return JsonResponse({'status': 'Payment confirmed'})
+
+    return JsonResponse({'status': 'Event received'})
+
+

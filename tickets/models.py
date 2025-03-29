@@ -106,3 +106,4 @@ class MolliePayment(models.Model):
 
     def __str__(self):
         return f"{self.mollie_id} - {self.status}"
+

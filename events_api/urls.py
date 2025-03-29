@@ -4,7 +4,8 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework import routers
 from tickets import views
-from tickets.views import create_mollie_payment, payment_status
+from tickets.views import create_mollie_payment, payment_status, stripe_webhook,\
+    create_stripe_payment_intent, get_stripe_payment_status
 
 # تعريف الـ Router لتسجيل viewsets
 router = routers.DefaultRouter()
@@ -44,6 +45,10 @@ path('get-reservation/', views.get_reservation_by_code, name='get-reservation'),
 
     # API للتحقق من الحالة (للتحديث التلقائي)
     path('payment/status/', payment_status, name='payment-status-api'),
+
+    path('create-stripe-payment-intent/', create_stripe_payment_intent, name='create_payment'),
+    path('payment-stripe-status/<str:payment_intent_id>/', get_stripe_payment_status, name='payment_status'),
+    path('stripe_webhook/', stripe_webhook, name='stripe_webhook'),
 
 ]
 
