@@ -238,22 +238,21 @@ def create_mollie_payment(request):
             'value': f"{request.data['amount']:.2f}"
         },
         'description': request.data.get('description', ''),
-        'redirectUrl': "mollie://payment-return",
+        'redirectUrl': f"mollie://payment-return?payment_id={{payment.id}}&status={{payment.status}}",
         'webhookUrl': request.data.get('webhookUrl', ''),
         'metadata': request.data.get('metadata', {})
     }
 
-    payment = mollie_client.payments.create(payment_data)  # ⬅️ ننشئ الدفع
+    payment = mollie_client.payments.create(payment_data)
 
-    # حفظ الدفع في قاعدة البيانات
     MolliePayment.objects.create(
         mollie_id=payment.id,
         amount=request.data['amount'],
         status=payment.status,
-        details=json.dumps(payment)  # ⭐ حفظ كل التفاصيل كـ JSON
+        details=json.dumps(payment)
     )
 
-    return Response(payment)  # ⚡ يرجع كل البيانات كما هي من Mollie
+    return Response(payment)
 
 logger = logging.getLogger(__name__)
 
