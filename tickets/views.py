@@ -17,9 +17,7 @@ from rest_framework.decorators import authentication_classes, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from stripe.climate import Order
 
-from events_api.settings import STRIPE_WEBHOOK
 from .models import Guest, Movie, generate_reservation_code, MolliePayment
 from .models import Reservation, Showtime
 from .serializer import ReservationSerializer, MovieSerializer, GuestSerializer
@@ -370,6 +368,7 @@ def create_stripe_payment_intent(request):
 
 @api_view(['GET'])
 def get_stripe_payment_status(request, payment_intent_id):
+    stripe.api_key = settings.STRIPE_API_KEY
     try:
         # Retrieve payment data from Stripe
         intent = stripe.PaymentIntent.retrieve(payment_intent_id)
@@ -394,9 +393,10 @@ def get_stripe_payment_status(request, payment_intent_id):
 
 @csrf_exempt
 def stripe_webhook(request):
+    stripe.api_key = settings.STRIPE_API_KEY
+    endpoint_secret = settings.STRIPE_WEBHOOK
     payload = request.body
     sig_header = request.META.get("HTTP_STRIPE_SIGNATURE", "")
-    endpoint_secret = STRIPE_WEBHOOK
 
     try:
         event = stripe.Webhook.construct_event(
