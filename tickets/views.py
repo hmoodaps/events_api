@@ -312,11 +312,9 @@ def payment_status(request):
 
 
 
-stripe.api_key = settings.STRIPE_API_KEY
 @api_view(['POST'])
 def create_stripe_payment_intent(request):
-    stripe.api_key = settings.STRIPE_API_KEY
-
+    stripe.api_key = settings.STRIPE_SECRET_KEY
     try:
         # Validate input values
         amount = request.data.get('amount')
